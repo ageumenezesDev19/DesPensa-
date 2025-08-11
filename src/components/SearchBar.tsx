@@ -12,9 +12,13 @@ interface Props {
   searchMode: "produto" | "combinacao";
   setSearchMode: (mode: "produto" | "combinacao") => void;
   handleSearch: () => void;
+  searching?: boolean;
+  onCancelSearch?: () => void;
+  showCancel?: boolean;
+  showGlobalCancel?: boolean;
 }
 
-const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, preco, setPreco, searchMode, setSearchMode, handleSearch }) => {
+const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, preco, setPreco, searchMode, setSearchMode, handleSearch, searching, onCancelSearch, showCancel }) => {
 
   const handleRetirarClick = (produto: Produto) => {
     onRetirar(produto);
@@ -28,6 +32,8 @@ const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, pr
     setResult(null); // Clear result after withdrawal
   };
 
+  // Usa apenas a prop showCancel do App para exibir o botão cancelar
+
   return (
     <div className="search-bar animated-fadein">
       <div className="search-controls">
@@ -37,6 +43,7 @@ const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, pr
           value={preco}
           onChange={e => setPreco(e.target.value)}
           onKeyPress={e => e.key === 'Enter' && handleSearch()}
+          disabled={!!searching}
         />
         <select
           value={searchMode}
@@ -44,18 +51,30 @@ const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, pr
             setSearchMode(e.target.value as any);
             setResult(null);
           }}
+          disabled={!!searching}
         >
           <option value="produto">Buscar Produto</option>
           <option value="combinacao">Buscar Combinação</option>
         </select>
-        <button onClick={handleSearch} disabled={produtos.length === 0 || !preco}>
+        <button onClick={handleSearch} disabled={produtos.length === 0 || !preco || !!searching}>
           Buscar
         </button>
-      </div>
+        </div>
+
+      {searching && (
+        <div className="search-loading">
+          <span className="loader-inline" /> Buscando produtos...
+          {showCancel && (
+            <button className="cancel-btn loading-cancel" onClick={onCancelSearch} type="button">
+              Cancelar
+            </button>
+          )}
+        </div>
+      )}
 
       {produtos.length === 0 && <p>Por favor, importe o arquivo `produtos.html` para começar.</p>}
 
-      {result && result.status === "ok" && searchMode === "produto" && (
+      {!searching && result && result.status === "ok" && searchMode === "produto" && (
         <div className="search-result">
           <p>
             <b>{result.produto.Descrição}</b> - R$ {Number(result.produto["Preço Venda"]).toFixed(2)}
@@ -65,7 +84,7 @@ const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, pr
           </button>
         </div>
       )}
-      {result && result.status === "ok" && searchMode === "combinacao" && (
+      {!searching && result && result.status === "ok" && searchMode === "combinacao" && (
         <div className="search-result">
           <h4>Combinação encontrada:</h4>
           <ul>
@@ -75,13 +94,15 @@ const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, pr
               </li>
             ))}
           </ul>
-          <b>Total: R$ {result.combinacao.reduce((acc: number, p: any) => acc + p["Preço Venda"], 0).toFixed(2)}</b>
-          <button onClick={() => handleRetirarCombinacaoClick(result.combinacao)}>
-            Retirar Combinação
-          </button>
+          <div className="comb-row">
+            <b>Total: R$ {result.combinacao.reduce((acc: number, p: any) => acc + p["Preço Venda"], 0).toFixed(2)}</b>
+            <button onClick={() => handleRetirarCombinacaoClick(result.combinacao)}>
+              Retirar Combinação
+            </button>
+          </div>
         </div>
       )}
-      {result && result.status !== "ok" && (
+      {!searching && result && result.status !== "ok" && (
         <div className="search-result">
           <p>Nenhum produto ou combinação encontrada para o preço desejado.</p>
         </div>

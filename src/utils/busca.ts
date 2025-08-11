@@ -55,6 +55,46 @@ export function buscarCombinacaoGulosa(
   return null;
 }
 
+// Versão assíncrona gulosa
+export async function buscarCombinacaoGulosaAsync(
+  df: Produto[],
+  precoDesejado: number,
+  tolerancia = 0.4,
+  usados = new Set<string>(),
+  blacklist: string[] = [],
+  maxProdutos = 5,
+  isCancelled?: () => boolean
+): Promise<Produto[] | null> {
+  let filtrados = df.filter(p => p['Margem Lucro'] > 0 && p['Quantidade'] >= 1);
+  for (const termo of blacklist) {
+    filtrados = filtrados.filter(p => !p['Descrição'].toLowerCase().includes(termo.toLowerCase()));
+  }
+  filtrados = filtrados.filter(p => !usados.has(p['Código']));
+  filtrados = filtrados.sort(() => Math.random() - 0.5);
+
+  const combinacao: Produto[] = [];
+  let valorRestante = precoDesejado;
+
+  for (let i = 0; i < maxProdutos; i++) {
+    if (isCancelled && isCancelled()) return null;
+    const candidatos = filtrados.filter(p => p['Preço Venda'] <= valorRestante + tolerancia);
+    if (candidatos.length === 0) break;
+    candidatos.forEach(p => p.Diferenca = Math.abs(p['Preço Venda'] - valorRestante));
+    const produto = candidatos.sort((a, b) => a.Diferenca - b.Diferenca)[0];
+    combinacao.push(produto);
+    valorRestante -= produto['Preço Venda'];
+    filtrados = filtrados.filter(p => p['Código'] !== produto['Código']);
+    if (Math.abs(valorRestante) <= tolerancia) break;
+    await new Promise(resolve => setTimeout(resolve, 0)); // yield para UI
+  }
+
+  const total = combinacao.reduce((sum, p) => sum + p['Preço Venda'], 0);
+  if (Math.abs(precoDesejado - total) <= tolerancia && combinacao.length > 0) {
+    return combinacao;
+  }
+  return null;
+}
+
 export function buscarCombinacaoExaustiva(
   df: Produto[],
   precoDesejado: number,
@@ -83,6 +123,49 @@ export function buscarCombinacaoExaustiva(
         melhor = comb;
         melhorDif = dif;
         if (melhorDif === 0) break outerLoop;
+      }
+    }
+  }
+
+  return melhor;
+}
+
+// Versão assíncrona exaustiva
+export async function buscarCombinacaoExaustivaAsync(
+  df: Produto[],
+  precoDesejado: number,
+  tolerancia = 0.4,
+  maxProdutos = 5,
+  usados = new Set<string>(),
+  blacklist: string[] = [],
+  isCancelled?: () => boolean
+): Promise<Produto[] | null> {
+  let filtrados = df.filter(p => p['Margem Lucro'] > 0 && p['Quantidade'] >= 1);
+  for (const termo of blacklist) {
+    filtrados = filtrados.filter(p => !p['Descrição'].toLowerCase().includes(termo.toLowerCase()));
+  }
+  filtrados = filtrados.filter(p => !usados.has(p['Código']));
+  const produtos = filtrados;
+
+  let melhor: Produto[] | null = null;
+  let melhorDif = Infinity;
+  let count = 0;
+
+  outerLoop:
+  for (let n = 2; n <= maxProdutos; n++) {
+    const cmb = new CombinatoricsCombination(produtos, n);
+    for (const comb of cmb) {
+      if (isCancelled && isCancelled()) return null;
+      const total = comb.reduce((sum, p) => sum + p['Preço Venda'], 0);
+      const dif = Math.abs(total - precoDesejado);
+      if (dif <= tolerancia && dif < melhorDif) {
+        melhor = comb;
+        melhorDif = dif;
+        if (melhorDif === 0) break outerLoop;
+      }
+      count++;
+      if (count % 100 === 0) {
+        await new Promise(resolve => setTimeout(resolve, 0)); // yield para UI
       }
     }
   }
