@@ -206,9 +206,50 @@ const App: React.FC = () => {
         return;
       }
       if (!combinacao || combinacao.length === 0) {
-        combinacao = await (await import("./utils/busca")).buscarCombinacaoExaustivaAsync(
-          produtos, precoDesejado, 0.4, 5, new Set(), blacklist, () => searchCancelled
-        );
+        // Usar Web Worker para busca exaustiva
+        const worker = new Worker(new URL('./workers/combinationWorker.ts', import.meta.url), { type: 'module' });
+        let workerResult: Produto[] | null = null;
+
+        const workerPromise = new Promise<Produto[] | null>((resolve) => {
+          worker.onmessage = (event) => {
+            const { type, result, error } = event.data;
+            if (type === 'result') {
+              resolve(result);
+            } else if (type === 'cancelled') {
+              resolve(null); // Resolva com null se for cancelado
+            } else if (type === 'error') {
+              console.error("Worker error:", error);
+              resolve(null);
+            }
+          };
+
+          // Enviar mensagem para o worker iniciar a busca
+          worker.postMessage({
+            type: 'startSearch',
+            payload: {
+              df: produtos,
+              precoDesejado,
+              tolerancia: 0.4,
+              maxProdutos: 5,
+              usados: Array.from(new Set()), // Set não é serializável, converte para Array
+              blacklist,
+            },
+          });
+        });
+
+        // Monitorar cancelamento da UI e enviar para o worker
+        const cancellationCheckInterval = setInterval(() => {
+          if (searchCancelled) {
+            worker.postMessage({ type: 'cancel' });
+            clearInterval(cancellationCheckInterval);
+          }
+        }, 100); // Checa a cada 100ms
+
+        workerResult = await workerPromise;
+        clearInterval(cancellationCheckInterval); // Limpa o intervalo após a promessa ser resolvida
+        worker.terminate(); // Termina o worker após o uso
+
+        combinacao = workerResult;
       }
       if (searchCancelled) {
         setLoading(false);
