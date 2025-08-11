@@ -1,0 +1,74 @@
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+
+  input[type='number'] {
+    padding: 0.5rem;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    width: 120px;
+  }
+
+  select {
+    padding: 0.5rem;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+  }
+
+  button {
+    background: #2d2d6e;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 0.5rem 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover { background: #4444aa; }
+  }
+
+  .search-result {
+    margin-left: 2rem;
+    background: #f0f0ff;
+    border-radius: 8px; /* Increased border-radius */
+    padding: 1rem 1.5rem; /* Increased padding */
+    animation: fadein 0.5s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+
+    p {
+      font-size: 1.1em; /* Slightly larger font for description */
+      margin-bottom: 0.5rem;
+    }
+
+    h4 {
+      margin-top: 0;
+      margin-bottom: 0.8rem;
+      color: #2d2d6e;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin-bottom: 0.8rem;
+
+      li {
+        margin-bottom: 0.3rem;
+      }
+    }
+
+    b {
+      font-size: 1.2em; /* Larger font for total */
+      color: #007bff; /* Highlight total price */
+    }
+
+    button {
+      margin-top: 1rem; /* Add some space above the button */
+      background: #4caf50;
+
+      &:hover { background: #388e3c; }
+    }
+  }
+}

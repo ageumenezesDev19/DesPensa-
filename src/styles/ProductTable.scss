@@ -1,0 +1,24 @@
+.product-table {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px #0001;
+  padding: 1rem;
+  margin-bottom: 2rem;
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    th, td {
+      padding: 0.5rem;
+      border-bottom: 1px solid #eee;
+      text-align: left;
+    }
+    th {
+      background: #f0f0ff;
+    }
+  }
+  @media (max-width: 600px) {
+    table, thead, tbody, th, td, tr { display: block; }
+    th, td { padding: 8px; }
+    tr { margin-bottom: 1rem; }
+  }
+}
