@@ -21,6 +21,7 @@ const App: React.FC = () => {
   const [notification, setNotification] = useState<string | null>(null);
   const [preco, setPreco] = useState<string>("");
   const [searchMode, setSearchMode] = useState<"produto" | "combinacao">("produto");
+  const [maxProdutos, setMaxProdutos] = useState<number>(5); // New state for maxProdutos
 
   // Persistência de dados: Carregar do localStorage ao iniciar
   useEffect(() => {
@@ -230,7 +231,7 @@ const App: React.FC = () => {
               df: produtos,
               precoDesejado,
               tolerancia: 0.4,
-              maxProdutos: 5,
+              maxProdutos,
               usados: Array.from(new Set()), // Set não é serializável, converte para Array
               blacklist,
             },
@@ -351,6 +352,8 @@ const App: React.FC = () => {
               onCancelSearch={handleCancelSearch}
               showCancel={showCancel && !showGlobalCancel}
               showGlobalCancel={showGlobalCancel}
+              maxProdutos={maxProdutos}
+              setMaxProdutos={setMaxProdutos}
             />
             <div className="controls">
               <FileUpload

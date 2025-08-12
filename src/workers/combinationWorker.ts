@@ -5,7 +5,7 @@ async function buscarCombinacaoExaustivaAsync(
   df: Produto[],
   precoDesejado: number,
   tolerancia = 0.4,
-  maxProdutos = 5,
+  maxProdutos = 10,
   usados = new Set<string>(),
   blacklist: string[] = [],
   isCancelled?: () => boolean

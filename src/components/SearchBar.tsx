@@ -16,9 +16,11 @@ interface Props {
   onCancelSearch?: () => void;
   showCancel?: boolean;
   showGlobalCancel?: boolean;
+  maxProdutos: number;
+  setMaxProdutos: React.Dispatch<React.SetStateAction<number>>;
 }
 
-const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, preco, setPreco, searchMode, setSearchMode, handleSearch, searching, onCancelSearch, showCancel }) => {
+const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, preco, setPreco, searchMode, setSearchMode, handleSearch, searching, onCancelSearch, showCancel, maxProdutos, setMaxProdutos }) => {
 
   const handleRetirarClick = (produto: Produto) => {
     onRetirar(produto);
@@ -59,7 +61,22 @@ const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, pr
         <button onClick={handleSearch} disabled={produtos.length === 0 || !preco || !!searching}>
           Buscar
         </button>
+      </div>
+      {searchMode === "combinacao" && (
+        <div className="slider-container">
+          <label htmlFor="maxProdutos">Max. Itens:</label>
+          <input
+            type="range"
+            id="maxProdutos"
+            min="5"
+            max="20"
+            value={maxProdutos}
+            onChange={(e) => setMaxProdutos(Number(e.target.value))}
+            disabled={!!searching}
+          />
+          <span>{maxProdutos}</span>
         </div>
+      )}
 
       {searching && (
         <div className="search-loading">
