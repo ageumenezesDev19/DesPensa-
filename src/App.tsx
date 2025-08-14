@@ -192,7 +192,7 @@ const App: React.FC = () => {
     setLoading(true);
     setSearching(true);
     setSearchCancelled(false);
-    const precoDesejado = Number(preco);
+    const precoDesejado = Number(preco.replace(',', '.'));
 
     await new Promise(resolve => setTimeout(resolve, 50));
     if (searchCancelled) {

@@ -40,7 +40,8 @@ const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, pr
     <div className="search-bar animated-fadein">
       <div className="search-controls">
         <input
-          type="number"
+          type="text"
+          pattern="[0-9,.]*"
           placeholder="Pesquisar por preço (R$)"
           value={preco}
           onChange={e => setPreco(e.target.value)}

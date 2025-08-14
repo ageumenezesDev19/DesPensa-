@@ -26,8 +26,19 @@ export function tratarDados(df: any[]): any[] {
   return df.map(row => {
     const novoRow = { ...row };
     for (const campo of camposNumericos) {
-      if (novoRow[campo]) {
-        const str = novoRow[campo].replace(/\./g, '').replace(',', '.');
+      if (novoRow[campo] && typeof novoRow[campo] === 'string') {
+        let str = novoRow[campo].trim();
+        const temVirgula = str.includes(',');
+        
+        if (temVirgula) {
+          // Formato brasileiro: 1.234,56 -> remove pontos, troca vírgula por ponto
+          str = str.replace(/\./g, '').replace(',', '.');
+        } else if (str.includes('.') && str.lastIndexOf('.') < str.length - 3) {
+          // Formato como "1.200" (mil e duzentos) -> remove pontos
+          str = str.replace(/\./g, '');
+        }
+        // Formato como "93.20" ou "1200" -> não faz nada, parseFloat lida com isso
+
         novoRow[campo] = parseFloat(str);
       }
     }
