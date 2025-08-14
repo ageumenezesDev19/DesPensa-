@@ -3,7 +3,7 @@
   flex-direction: column; // Changed to column
   align-items: flex-start; // Align items to the start
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
 
   input[type='number'] {
     padding: 0.5rem;
@@ -34,12 +34,14 @@
   .search-result {
     margin-top: 1rem; // Changed from margin-left
     margin-left: 0; // Reset margin-left
-    width: 100%; // Make it full width
+    width: auto; // Remove full width
+    max-width: 100%; // Ensure it doesn't overflow
     background: #f0f0ff;
     border-radius: 8px; /* Increased border-radius */
     padding: 1rem 1.5rem; /* Increased padding */
     animation: fadein 0.5s;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    border: 1px solid #ddd; // Add a border
 
     p {
       font-size: 1.1em; /* Slightly larger font for description */
@@ -132,4 +134,28 @@
     min-width: 20px; // Ensure space for two digits
     text-align: center;
   }
+}
+
+.comb-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 15px;
+
+  .comb-actions {
+    display: flex;
+    gap: 1rem; // Use a consistent gap
+    align-items: center; // Align items vertically
+  }
+}
+
+.single-product-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+@keyframes fadein {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

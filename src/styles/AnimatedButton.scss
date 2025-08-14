@@ -1,0 +1,55 @@
+@use 'sass:color';
+@use './variables' as v;
+
+.animated-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  border: 1px solid v.$primary-color;
+  border-radius: 8px;
+  background-color: v.$primary-color;
+  color: white;
+  font-size: 1em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  position: relative;
+
+  .icon {
+    display: inline-block;
+    margin-right: 8px;
+    transition: transform 0.4s ease;
+  }
+
+  .text {
+    display: inline-block;
+  }
+
+  &:hover {
+    background-color: color.adjust(v.$primary-color, $lightness: -10%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+    .icon {
+      transform: rotate(180deg);
+    }
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  &:disabled {
+    background-color: #ccc;
+    border-color: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+
+    .icon {
+      transform: none;
+    }
+  }
+}
