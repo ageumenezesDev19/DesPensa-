@@ -23,6 +23,7 @@ const App: React.FC = () => {
   const [searchMode, setSearchMode] = useState<"produto" | "combinacao">("produto");
   const [maxProdutos, setMaxProdutos] = useState<number>(5);
   const [previouslyFound, setPreviouslyFound] = useState<Set<string>>(new Set());
+  const [focusSearchInput, setFocusSearchInput] = useState<boolean>(false);
 
   useEffect(() => {
     const produtosStorage = localStorage.getItem("produtos");
@@ -53,6 +54,29 @@ const App: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [notification]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey) {
+        switch (e.key) {
+          case '1':
+            setView('produtos');
+            break;
+          case '2':
+            setView('retirados');
+            break;
+          case '3':
+            setView('blacklist');
+            break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   const showNotification = (message: string) => {
     setNotification(message);
@@ -116,15 +140,16 @@ const App: React.FC = () => {
 
   const handleRetirar = (produtoParaRetirar: Produto) => {
     setLoading(true);
-    const novosProdutos = produtos
-      .map(p =>
-        p.Código === produtoParaRetirar.Código
-          ? { ...p, Quantidade: p.Quantidade - 1 }
-          : p
-      )
-      .filter(p => p.Quantidade > 0);
-
-    setProdutos(novosProdutos);
+    setProdutos(prevProdutos => {
+      const novosProdutos = prevProdutos
+        .map(p =>
+          p.Código === produtoParaRetirar.Código
+            ? { ...p, Quantidade: p.Quantidade - 1 }
+            : p
+        )
+        .filter(p => p.Quantidade > 0);
+      return novosProdutos;
+    });
 
     const hoje = new Date();
     const dataFormatada = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')} ${String(hoje.getHours()).padStart(2, '0')}:${String(hoje.getMinutes()).padStart(2, '0')}:${String(hoje.getSeconds()).padStart(2, '0')}`;
@@ -140,6 +165,9 @@ const App: React.FC = () => {
     setRetirados(prevRetirados => [...prevRetirados, produtoRetirado]);
     setLoading(false);
     showNotification(`Produto ${produtoParaRetirar.Descrição} retirado do estoque.`);
+    setFocusSearchInput(true);
+    setPreco("");
+    setSearchResult(null);
   };
 
   const [searching, setSearching] = useState(false);
@@ -174,15 +202,14 @@ const App: React.FC = () => {
       searchResult.combinacao.forEach((p: Produto) => newPreviouslyFound.add(p.Código));
     } else if (searchResult.produto) {
       newPreviouslyFound.add(searchResult.produto.Código);
-    } else {
-      return;
     }
 
     setPreviouslyFound(newPreviouslyFound);
-    handleSearch(true);
+    setSearchResult(null); 
+    handleSearch(true, newPreviouslyFound);
   };
 
-  const handleSearch = async (isRecalculation = false) => {
+  const handleSearch = async (isRecalculation = false, previouslyFoundSet: Set<string> | null = null) => {
     if (!preco) return;
 
     if (!isRecalculation) {
@@ -214,7 +241,8 @@ const App: React.FC = () => {
         setSearchResult({ status: 'not_found' });
       }
     } else {
-      const produtosFiltrados = produtos.filter(p => !previouslyFound.has(p.Código));
+      const currentPreviouslyFound = previouslyFoundSet || previouslyFound;
+      const produtosFiltrados = produtos.filter(p => !currentPreviouslyFound.has(p.Código));
 
       let combinacao = await (await import("./utils/busca")).buscarCombinacaoGulosaAsync(
         produtosFiltrados,
@@ -374,6 +402,8 @@ const App: React.FC = () => {
               showGlobalCancel={showGlobalCancel}
               maxProdutos={maxProdutos}
               setMaxProdutos={setMaxProdutos}
+              focusInput={focusSearchInput}
+              setFocusInput={setFocusSearchInput}
             />
             <div className="controls">
               <FileUpload

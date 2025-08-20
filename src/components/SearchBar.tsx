@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Produto } from "../utils/estoque";
 import AnimatedButton from "./AnimatedButton";
 import "../styles/SearchBar.scss";
@@ -12,7 +12,7 @@ interface Props {
   setPreco: (preco: string) => void;
   searchMode: "produto" | "combinacao";
   setSearchMode: (mode: "produto" | "combinacao") => void;
-  handleSearch: () => void;
+  handleSearch: (isRecalculation: boolean, previouslyFoundSet: Set<string> | null) => void;
   handleRecalculate: () => void;
   searching?: boolean;
   onCancelSearch?: () => void;
@@ -20,9 +20,26 @@ interface Props {
   showGlobalCancel?: boolean;
   maxProdutos: number;
   setMaxProdutos: React.Dispatch<React.SetStateAction<number>>;
+  focusInput?: boolean;
+  setFocusInput?: (focus: boolean) => void;
 }
 
-const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, preco, setPreco, searchMode, setSearchMode, handleSearch, handleRecalculate, searching, onCancelSearch, showCancel, maxProdutos, setMaxProdutos }) => {
+const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, preco, setPreco, searchMode, setSearchMode, handleSearch, handleRecalculate, searching, onCancelSearch, showCancel, maxProdutos, setMaxProdutos, focusInput, setFocusInput }) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const retirarButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (focusInput && inputRef.current) {
+      inputRef.current.focus();
+      setFocusInput?.(false);
+    }
+  }, [focusInput, setFocusInput]);
+
+  useEffect(() => {
+    if (result && result.status === 'ok' && retirarButtonRef.current) {
+      retirarButtonRef.current.focus();
+    }
+  }, [result]);
 
   const handleRetirarClick = (produto: Produto) => {
     onRetirar(produto);
@@ -36,16 +53,31 @@ const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, pr
     setResult(null);
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      if (result && result.status === 'ok') {
+        if (searchMode === 'produto') {
+          handleRetirarClick(result.produto);
+        } else {
+          handleRetirarCombinacaoClick(result.combinacao);
+        }
+      } else {
+        handleSearch(false, null);
+      }
+    }
+  };
+
   return (
     <div className="search-bar animated-fadein">
       <div className="search-controls">
         <input
+          ref={inputRef}
           type="text"
           pattern="[0-9,.]*"
           placeholder="Pesquisar por preço (R$)"
           value={preco}
           onChange={e => setPreco(e.target.value)}
-          onKeyPress={e => e.key === 'Enter' && handleSearch()}
+          onKeyPress={handleKeyPress}
           disabled={!!searching}
         />
         <select
@@ -59,7 +91,7 @@ const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, pr
           <option value="produto">Buscar Produto</option>
           <option value="combinacao">Buscar Combinação</option>
         </select>
-        <button onClick={() => handleSearch()} disabled={produtos.length === 0 || !preco || !!searching}>
+        <button onClick={() => handleSearch(false, null)} disabled={produtos.length === 0 || !preco || !!searching}>
           Buscar
         </button>
       </div>
@@ -95,10 +127,10 @@ const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, pr
       {!searching && result && result.status === "ok" && searchMode === "produto" && (
         <div className="search-result">
           <p>
-            <b>{result.produto.Descrição}</b> - R$ {Number(result.produto["Preço Venda"]).toFixed(2)}
+            <b>{result.produto.Descrição}</b> - R$ {Number(result.produto["Preço Venda"]).toFixed(2)} (Estoque: {result.produto.Quantidade})
           </p>
           <div className="comb-actions single-product-actions">
-            <button onClick={() => handleRetirarClick(result.produto)}>
+            <button ref={retirarButtonRef} onClick={() => handleRetirarClick(result.produto)}>
               Retirar 1 unidade
             </button>
             <AnimatedButton onClick={handleRecalculate} title="Buscar outro produto" className="recalculate-btn">
@@ -113,14 +145,14 @@ const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, pr
           <ul>
             {result.combinacao.map((p: any, i: number) => (
               <li key={i}>
-                {p.Descrição} - R$ {Number(p["Preço Venda"]).toFixed(2)}
+                {p.Descrição} - R$ {Number(p["Preço Venda"]).toFixed(2)} (Estoque: {p.Quantidade})
               </li>
             ))}
           </ul>
           <div className="comb-row">
             <b>Total: R$ {result.combinacao.reduce((acc: number, p: any) => acc + p["Preço Venda"], 0).toFixed(2)}</b>
             <div className="comb-actions">
-              <button onClick={() => handleRetirarCombinacaoClick(result.combinacao)}>
+              <button ref={retirarButtonRef} onClick={() => handleRetirarCombinacaoClick(result.combinacao)}>
                 Retirar Combinação
               </button>
               <AnimatedButton onClick={handleRecalculate} title="Buscar outra combinação" className="recalculate-btn">
