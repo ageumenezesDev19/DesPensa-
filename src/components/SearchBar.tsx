@@ -26,7 +26,6 @@ interface Props {
 
 const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, preco, setPreco, searchMode, setSearchMode, handleSearch, handleRecalculate, searching, onCancelSearch, showCancel, maxProdutos, setMaxProdutos, focusInput, setFocusInput }) => {
   const inputRef = useRef<HTMLInputElement>(null);
-  const retirarButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (focusInput && inputRef.current) {
@@ -34,12 +33,6 @@ const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, pr
       setFocusInput?.(false);
     }
   }, [focusInput, setFocusInput]);
-
-  useEffect(() => {
-    if (result && result.status === 'ok' && retirarButtonRef.current) {
-      retirarButtonRef.current.focus();
-    }
-  }, [result]);
 
   const handleRetirarClick = (produto: Produto) => {
     onRetirar(produto);
@@ -130,7 +123,7 @@ const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, pr
             <b>{result.produto.Descrição}</b> - R$ {Number(result.produto["Preço Venda"]).toFixed(2)} (Estoque: {result.produto.Quantidade})
           </p>
           <div className="comb-actions single-product-actions">
-            <button ref={retirarButtonRef} onClick={() => handleRetirarClick(result.produto)}>
+            <button onClick={() => handleRetirarClick(result.produto)}>
               Retirar 1 unidade
             </button>
             <AnimatedButton onClick={handleRecalculate} title="Buscar outro produto" className="recalculate-btn">
@@ -152,7 +145,7 @@ const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, pr
           <div className="comb-row">
             <b>Total: R$ {result.combinacao.reduce((acc: number, p: any) => acc + p["Preço Venda"], 0).toFixed(2)}</b>
             <div className="comb-actions">
-              <button ref={retirarButtonRef} onClick={() => handleRetirarCombinacaoClick(result.combinacao)}>
+              <button onClick={() => handleRetirarCombinacaoClick(result.combinacao)}>
                 Retirar Combinação
               </button>
               <AnimatedButton onClick={handleRecalculate} title="Buscar outra combinação" className="recalculate-btn">

@@ -23,7 +23,7 @@ const App: React.FC = () => {
   const [searchMode, setSearchMode] = useState<"produto" | "combinacao">("produto");
   const [maxProdutos, setMaxProdutos] = useState<number>(5);
   const [previouslyFound, setPreviouslyFound] = useState<Set<string>>(new Set());
-  const [focusSearchInput, setFocusSearchInput] = useState<boolean>(false);
+  const [focusSearchInput, setFocusSearchInput] = useState<boolean>(true);
 
   useEffect(() => {
     const produtosStorage = localStorage.getItem("produtos");
@@ -316,6 +316,7 @@ const App: React.FC = () => {
         setSearchResult({ status: 'not_found' });
       }
     }
+    setFocusSearchInput(true);
     setLoading(false);
     setSearching(false);
   };
