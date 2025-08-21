@@ -323,15 +323,26 @@ const App: React.FC = () => {
 
   const [showClearModal, setShowClearModal] = useState(false);
 
-  const handleClearAll = () => {
-    setProdutos([]);
-    setRetirados([]);
-    setBlacklist([]);
-    localStorage.removeItem("produtos");
-    localStorage.removeItem("retirados");
-    localStorage.removeItem("blacklist");
+  const handleClearData = (type: "produtos" | "retirados" | "all") => {
+    if (type === "produtos" || type === "all") {
+      setProdutos([]);
+      localStorage.removeItem("produtos");
+    }
+    if (type === "retirados" || type === "all") {
+      setRetirados([]);
+      localStorage.removeItem("retirados");
+    }
+    if (type === "all") {
+      setBlacklist([]);
+      localStorage.removeItem("blacklist");
+    }
     setShowClearModal(false);
-    showNotification("Todos os dados foram apagados.");
+    const message = {
+      produtos: "Dados do estoque apagados.",
+      retirados: "Dados de retirados apagados.",
+      all: "Todos os dados foram apagados."
+    };
+    showNotification(message[type]);
   };
 
   const showGlobalCancel = searching && showCancel;
@@ -346,10 +357,18 @@ const App: React.FC = () => {
       {showClearModal && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <h3>Tem certeza?</h3>
-            <p>Esta ação irá apagar <b>todos</b> os dados do app. Deseja continuar?</p>
-            <div className="modal-actions">
-              <button className="danger" onClick={handleClearAll}>Apagar Tudo</button>
+            <h3>O que você deseja apagar?</h3>
+            <p>Esta ação é irreversível. Selecione o que deseja limpar:</p>
+            <div className="modal-actions vertical">
+              <button className="danger" onClick={() => handleClearData("produtos")}>
+                Apagar Estoque
+              </button>
+              <button className="danger" onClick={() => handleClearData("retirados")}>
+                Apagar Retirados
+              </button>
+              <button className="danger" onClick={() => handleClearData("all")}>
+                Apagar Tudo
+              </button>
               <button onClick={() => setShowClearModal(false)}>Cancelar</button>
             </div>
           </div>
