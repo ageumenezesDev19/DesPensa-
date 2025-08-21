@@ -159,33 +159,37 @@ const WithdrawnTable: React.FC<Props> = ({ produtos }) => {
 
       <div className="monthly-summary">
         <h2>Histórico de Retiradas</h2>
-        {sortedMonths.map(month => (
-          <div key={month} className="month-section">
-            <h3 onClick={() => toggleMonth(month)} className="month-header">
-              {month.charAt(0).toUpperCase() + month.slice(1)}
-              <span className={`toggle-icon ${expandedMonths.has(month) ? 'expanded' : ''}`}></span>
-            </h3>
-            {expandedMonths.has(month) && (
-              <div className="month-content">
-                {Object.keys(withdrawnByMonth[month]).sort((a,b) => new Date(b).getTime() - new Date(a).getTime()).map(dateString => (
-                  <div key={dateString} className="day-details">
-                    <h4 onClick={() => toggleDay(month, dateString)} className="day-header">
-                      {formatDate(new Date(dateString))} - Total: R$ {withdrawnByMonth[month][dateString].reduce((acc, p) => acc + Number(p["Preço Venda"]), 0).toFixed(2)}
-                      <span className={`toggle-icon ${expandedDays[month]?.has(dateString) ? 'expanded' : ''}`}></span>
-                    </h4>
-                    {expandedDays[month]?.has(dateString) && (
-                      <ul>
-                        {withdrawnByMonth[month][dateString].map((p, i) => (
-                          <li key={i}>{p.Descrição} - R$ {Number(p["Preço Venda"]).toFixed(2)}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
+        {sortedMonths.map(month => {
+          const monthlyTotal = Object.values(withdrawnByMonth[month]).flat().reduce((acc, p) => acc + Number(p["Preço Venda"]), 0);
+
+          return (
+            <div key={month} className="month-section">
+              <h3 onClick={() => toggleMonth(month)} className="month-header">
+                <span>{month.charAt(0).toUpperCase() + month.slice(1)} - Total: R$ {monthlyTotal.toFixed(2)}</span>
+                <span className={`toggle-icon ${expandedMonths.has(month) ? 'expanded' : ''}`}></span>
+              </h3>
+              {expandedMonths.has(month) && (
+                <div className="month-content">
+                  {Object.keys(withdrawnByMonth[month]).sort((a,b) => new Date(b).getTime() - new Date(a).getTime()).map(dateString => (
+                    <div key={dateString} className="day-details">
+                      <h4 onClick={() => toggleDay(month, dateString)} className="day-header">
+                        {formatDate(new Date(dateString))} - Total: R$ {withdrawnByMonth[month][dateString].reduce((acc, p) => acc + Number(p["Preço Venda"]), 0).toFixed(2)}
+                        <span className={`toggle-icon ${expandedDays[month]?.has(dateString) ? 'expanded' : ''}`}></span>
+                      </h4>
+                      {expandedDays[month]?.has(dateString) && (
+                        <ul>
+                          {withdrawnByMonth[month][dateString].map((p, i) => (
+                            <li key={i}>{p.Descrição} - R$ {Number(p["Preço Venda"]).toFixed(2)}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        )}
       </div>
     </div>
   );
