@@ -11,13 +11,19 @@ import { loadBlacklistFromString, saveBlacklistToString } from "./utils/blacklis
 import { buscarProdutoProximo } from "./utils/busca";
 import "./styles/main.scss";
 
+// O worker agora retorna este tipo, então vamos defini-lo aqui para type safety.
+export interface ProdutoComQuantidade extends Produto {
+  quantidadeUtilizada: number;
+}
+
 const App: React.FC = () => {
   const [view, setView] = useState<"produtos" | "retirados" | "blacklist">("produtos");
   const [loading, setLoading] = useState(false);
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [retirados, setRetirados] = useState<Retirado[]>([]);
   const [blacklist, setBlacklist] = useState<string[]>([]);
-  const [searchResult, setSearchResult] = useState<any>(null);
+  // O searchResult agora pode conter uma combinação de `ProdutoComQuantidade`.
+  const [searchResult, setSearchResult] = useState<{ status: string; produto?: Produto; combinacao?: ProdutoComQuantidade[] } | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
   const [preco, setPreco] = useState<string>("");
   const [searchMode, setSearchMode] = useState<"produto" | "combinacao">("produto");
@@ -126,25 +132,29 @@ const App: React.FC = () => {
   };
 
   const handleDownload = (filename: string, content: string) => {
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showNotification(`${filename} foi baixado com sucesso!`);
+    try {
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showNotification(`${filename} foi salvo com sucesso!`);
+    } catch (error) {
+      console.error("Erro ao salvar o arquivo:", error);
+      showNotification("Ocorreu um erro ao salvar o arquivo.");
+    }
   };
 
-  const handleRetirar = (produtoParaRetirar: Produto) => {
-    setLoading(true);
+  const handleRetirar = (produtoParaRetirar: Produto, quantidade: number = 1) => {
     setProdutos(prevProdutos => {
       const novosProdutos = prevProdutos
         .map(p =>
           p.Código === produtoParaRetirar.Código
-            ? { ...p, Quantidade: p.Quantidade - 1 }
+            ? { ...p, Quantidade: p.Quantidade - quantidade }
             : p
         )
         .filter(p => p.Quantidade > 0);
@@ -157,14 +167,34 @@ const App: React.FC = () => {
     const produtoRetirado: Retirado = {
       Código: produtoParaRetirar.Código,
       Descrição: produtoParaRetirar.Descrição,
-      "Quantidade Retirada": "1",
+      "Quantidade Retirada": String(quantidade),
       "Preço Venda": String(produtoParaRetirar["Preço Venda"]),
       Data: dataFormatada,
     };
 
     setRetirados(prevRetirados => [...prevRetirados, produtoRetirado]);
+  };
+
+  const handleRetirarSingleProduct = (produto: Produto) => {
+    setLoading(true);
+    handleRetirar(produto, 1);
     setLoading(false);
-    showNotification(`Produto ${produtoParaRetirar.Descrição} retirado do estoque.`);
+    showNotification(`Produto ${produto.Descrição} retirado do estoque.`);
+    setFocusSearchInput(true);
+    setPreco("");
+    setSearchResult(null);
+  }
+
+  // Atualizado para usar a nova interface ProdutoComQuantidade
+  const handleRetirarCombinacao = (combinacao: ProdutoComQuantidade[]) => {
+    setLoading(true);
+    let totalItems = 0;
+    combinacao.forEach(p => {
+      handleRetirar(p, p.quantidadeUtilizada);
+      totalItems += p.quantidadeUtilizada;
+    });
+    setLoading(false);
+    showNotification(`${totalItems} itens retirados do estoque.`);
     setFocusSearchInput(true);
     setPreco("");
     setSearchResult(null);
@@ -243,66 +273,47 @@ const App: React.FC = () => {
     } else {
       const currentPreviouslyFound = previouslyFoundSet || previouslyFound;
       const produtosFiltrados = produtos.filter(p => !currentPreviouslyFound.has(p.Código));
+      
+      // A busca gulosa foi removida para usar diretamente o worker, que é mais poderoso.
+      const worker = new Worker(new URL('./workers/combinationWorker.ts', import.meta.url), { type: 'module' });
+      let workerResult: ProdutoComQuantidade[] | null = null;
 
-      let combinacao = await (await import("./utils/busca")).buscarCombinacaoGulosaAsync(
-        produtosFiltrados,
-        precoDesejado,
-        0.4,
-        new Set(),
-        blacklist,
-        5,
-        () => searchCancelled
-      );
-
-      if (searchCancelled) {
-        setLoading(false);
-        setSearching(false);
-        return;
-      }
-
-      if (!combinacao || combinacao.length === 0) {
-        const worker = new Worker(new URL('./workers/combinationWorker.ts', import.meta.url), { type: 'module' });
-        let workerResult: Produto[] | null = null;
-
-        const workerPromise = new Promise<Produto[] | null>((resolve) => {
-          worker.onmessage = (event) => {
-            const { type, result, error } = event.data;
-            if (type === 'result') {
-              resolve(result);
-            } else if (type === 'cancelled') {
-              resolve(null);
-            } else if (type === 'error') {
-              console.error("Worker error:", error);
-              resolve(null);
-            }
-          };
-
-          worker.postMessage({
-            type: 'startSearch',
-            payload: {
-              df: produtosFiltrados,
-              precoDesejado,
-              tolerancia: 0.4,
-              maxProdutos,
-              usados: Array.from(new Set()),
-              blacklist,
-            },
-          });
-        });
-
-        const cancellationCheckInterval = setInterval(() => {
-          if (searchCancelled) {
-            worker.postMessage({ type: 'cancel' });
-            clearInterval(cancellationCheckInterval);
+      const workerPromise = new Promise<ProdutoComQuantidade[] | null>((resolve) => {
+        worker.onmessage = (event) => {
+          const { type, result, error } = event.data;
+          if (type === 'result') {
+            resolve(result);
+          } else if (type === 'cancelled') {
+            resolve(null);
+          } else if (type === 'error') {
+            console.error("Worker error:", error);
+            resolve(null);
           }
-        }, 100);
+        };
 
-        workerResult = await workerPromise;
-        clearInterval(cancellationCheckInterval);
-        worker.terminate();
+        worker.postMessage({
+          type: 'startSearch',
+          payload: {
+            df: produtosFiltrados,
+            precoDesejado,
+            tolerancia: 0.4,
+            maxProdutos,
+            usados: Array.from(currentPreviouslyFound), // Passa os produtos já usados
+            blacklist,
+          },
+        });
+      });
 
-        combinacao = workerResult;
-      }
+      const cancellationCheckInterval = setInterval(() => {
+        if (searchCancelled) {
+          worker.postMessage({ type: 'cancel' });
+          clearInterval(cancellationCheckInterval);
+        }
+      }, 100);
+
+      workerResult = await workerPromise;
+      clearInterval(cancellationCheckInterval);
+      worker.terminate();
 
       if (searchCancelled) {
         setLoading(false);
@@ -310,8 +321,9 @@ const App: React.FC = () => {
         return;
       }
 
-      if (combinacao && combinacao.length > 0) {
-        setSearchResult({ status: 'ok', combinacao: combinacao });
+      if (workerResult && workerResult.length > 0) {
+        // Não precisamos mais do groupAndCountProducts. O worker já retorna o formato correto.
+        setSearchResult({ status: 'ok', combinacao: workerResult });
       } else {
         setSearchResult({ status: 'not_found' });
       }
@@ -407,7 +419,8 @@ const App: React.FC = () => {
           <>
             <SearchBar
               produtos={produtos}
-              onRetirar={handleRetirar}
+              onRetirar={handleRetirarSingleProduct}
+              onRetirarCombinacao={handleRetirarCombinacao}
               result={searchResult}
               setResult={setSearchResult}
               preco={preco}

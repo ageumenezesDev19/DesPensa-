@@ -3,10 +3,13 @@ import { Produto } from "../utils/estoque";
 import AnimatedButton from "./AnimatedButton";
 import "../styles/SearchBar.scss";
 
+import { ProdutoComQuantidade } from "../App"; // Importando o novo tipo
+
 interface Props {
   produtos: Produto[];
   onRetirar: (produto: Produto) => void;
-  result: any;
+  onRetirarCombinacao: (combinacao: ProdutoComQuantidade[]) => void; // Tipo atualizado
+  result: { status: string; produto?: Produto; combinacao?: ProdutoComQuantidade[] } | null; // Tipo atualizado
   setResult: (result: any) => void;
   preco: string;
   setPreco: (preco: string) => void;
@@ -24,7 +27,7 @@ interface Props {
   setFocusInput?: (focus: boolean) => void;
 }
 
-const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, preco, setPreco, searchMode, setSearchMode, handleSearch, handleRecalculate, searching, onCancelSearch, showCancel, maxProdutos, setMaxProdutos, focusInput, setFocusInput }) => {
+const SearchBar: React.FC<Props> = ({ produtos, onRetirar, onRetirarCombinacao, result, setResult, preco, setPreco, searchMode, setSearchMode, handleSearch, handleRecalculate, searching, onCancelSearch, showCancel, maxProdutos, setMaxProdutos, focusInput, setFocusInput }) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -39,19 +42,17 @@ const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, pr
     setResult(null);
   };
 
-  const handleRetirarCombinacaoClick = (combinacao: Produto[]) => {
-    combinacao.forEach(produto => {
-      onRetirar(produto);
-    });
+  const handleRetirarCombinacaoClick = (combinacao: ProdutoComQuantidade[]) => {
+    onRetirarCombinacao(combinacao);
     setResult(null);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       if (result && result.status === 'ok') {
-        if (searchMode === 'produto') {
+        if (searchMode === 'produto' && result.produto) {
           handleRetirarClick(result.produto);
-        } else {
+        } else if (searchMode === 'combinacao' && result.combinacao) {
           handleRetirarCombinacaoClick(result.combinacao);
         }
       } else {
@@ -95,7 +96,7 @@ const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, pr
             type="range"
             id="maxProdutos"
             min="5"
-            max="20"
+            max="50"
             value={maxProdutos}
             onChange={(e) => setMaxProdutos(Number(e.target.value))}
             disabled={!!searching}
@@ -117,13 +118,13 @@ const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, pr
 
       {produtos.length === 0 && <p>Por favor, importe o arquivo `produtos.html` para começar.</p>}
 
-      {!searching && result && result.status === "ok" && searchMode === "produto" && (
+      {!searching && result && result.status === "ok" && searchMode === "produto" && result.produto && (
         <div className="search-result">
           <p>
             <b>{result.produto.Descrição}</b> - R$ {Number(result.produto["Preço Venda"]).toFixed(2)} (Estoque: {result.produto.Quantidade})
           </p>
           <div className="comb-actions single-product-actions">
-            <button onClick={() => handleRetirarClick(result.produto)}>
+            <button onClick={() => handleRetirarClick(result.produto!)}>
               Retirar 1 unidade
             </button>
             <AnimatedButton onClick={handleRecalculate} title="Buscar outro produto" className="recalculate-btn">
@@ -132,20 +133,22 @@ const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, pr
           </div>
         </div>
       )}
-      {!searching && result && result.status === "ok" && searchMode === "combinacao" && (
+      {!searching && result && result.status === "ok" && searchMode === "combinacao" && result.combinacao && (
         <div className="search-result">
           <h4>Combinação encontrada:</h4>
           <ul>
             {result.combinacao.map((p: any, i: number) => (
               <li key={i}>
-                {p.Descrição} - R$ {Number(p["Preço Venda"]).toFixed(2)} (Estoque: {p.Quantidade})
+                {p.Descrição} (<b>x{p.quantidadeUtilizada}</b>) - R$ {Number(p["Preço Venda"]).toFixed(2)} (un)
+                {p.quantidadeUtilizada > 1 && <span className="total-item-price"> / Total: R$ {(Number(p["Preço Venda"]) * p.quantidadeUtilizada).toFixed(2)}</span>}
+                <span className="stock-info"> (Estoque: {p.Quantidade})</span>
               </li>
             ))}
           </ul>
           <div className="comb-row">
-            <b>Total: R$ {result.combinacao.reduce((acc: number, p: any) => acc + p["Preço Venda"], 0).toFixed(2)}</b>
+            <b>Total da Combinação: R$ {result.combinacao.reduce((acc: number, p: any) => acc + p["Preço Venda"] * p.quantidadeUtilizada, 0).toFixed(2)}</b>
             <div className="comb-actions">
-              <button onClick={() => handleRetirarCombinacaoClick(result.combinacao)}>
+              <button onClick={() => handleRetirarCombinacaoClick(result.combinacao!)}>
                 Retirar Combinação
               </button>
               <AnimatedButton onClick={handleRecalculate} title="Buscar outra combinação" className="recalculate-btn">
