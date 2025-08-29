@@ -1,10 +1,16 @@
 import React from "react";
 import "../styles/Loader.scss";
 
-const Loader: React.FC = () => (
-  <div className="loader-overlay">
+type LoaderProps = { overlay?: boolean };
+
+const Loader: React.FC<LoaderProps> = ({ overlay = true }) => (
+  overlay ? (
+    <div className="loader-overlay">
+      <div className="loader"></div>
+    </div>
+  ) : (
     <div className="loader"></div>
-  </div>
+  )
 );
 
 export default Loader;
