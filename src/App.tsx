@@ -21,8 +21,9 @@ const App: React.FC = () => {
   const [notification, setNotification] = useState<string | null>(null);
   const [preco, setPreco] = useState<string>("");
   const [searchMode, setSearchMode] = useState<"produto" | "combinacao">("produto");
+  const [maxProdutos, setMaxProdutos] = useState<number>(5);
+  const [previouslyFound, setPreviouslyFound] = useState<Set<string>>(new Set());
 
-  // Persistência de dados: Carregar do localStorage ao iniciar
   useEffect(() => {
     const produtosStorage = localStorage.getItem("produtos");
     const retiradosStorage = localStorage.getItem("retirados");
@@ -32,13 +33,14 @@ const App: React.FC = () => {
     if (blacklistStorage) setBlacklist(JSON.parse(blacklistStorage));
   }, []);
 
-  // Persistência de dados: Salvar no localStorage sempre que mudar
   useEffect(() => {
     localStorage.setItem("produtos", JSON.stringify(produtos));
   }, [produtos]);
+
   useEffect(() => {
     localStorage.setItem("retirados", JSON.stringify(retirados));
   }, [retirados]);
+
   useEffect(() => {
     localStorage.setItem("blacklist", JSON.stringify(blacklist));
   }, [blacklist]);
@@ -47,7 +49,7 @@ const App: React.FC = () => {
     if (notification) {
       const timer = setTimeout(() => {
         setNotification(null);
-      }, 3000); // Notification disappears after 3 seconds
+      }, 3000);
       return () => clearTimeout(timer);
     }
   }, [notification]);
@@ -140,12 +142,10 @@ const App: React.FC = () => {
     showNotification(`Produto ${produtoParaRetirar.Descrição} retirado do estoque.`);
   };
 
-  // Estado para controle de busca/cancelamento
   const [searching, setSearching] = useState(false);
   const [searchCancelled, setSearchCancelled] = useState(false);
   const [showCancel, setShowCancel] = useState(false);
 
-  // Timer para mostrar botão cancelar
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
     if (searching) {
@@ -157,25 +157,43 @@ const App: React.FC = () => {
     return () => clearTimeout(timer);
   }, [searching]);
 
-  // Função para cancelar busca
   const handleCancelSearch = () => {
     setSearchCancelled(true);
-    setSearching(false); // Esconde loading local imediatamente
-    setLoading(true);    // Mostra loading global até a busca finalizar
+    setSearching(false);
+    setLoading(true);
     showNotification("Busca cancelada.");
-    // Garante que o loading global não fique travado
     setTimeout(() => setLoading(false), 1500);
   };
 
-  // Função de busca com cancelamento
-  const handleSearch = async () => {
+  const handleRecalculate = () => {
+    if (!searchResult) return;
+
+    const newPreviouslyFound = new Set(previouslyFound);
+
+    if (searchResult.combinacao) {
+      searchResult.combinacao.forEach((p: Produto) => newPreviouslyFound.add(p.Código));
+    } else if (searchResult.produto) {
+      newPreviouslyFound.add(searchResult.produto.Código);
+    } else {
+      return;
+    }
+
+    setPreviouslyFound(newPreviouslyFound);
+    handleSearch(true);
+  };
+
+  const handleSearch = async (isRecalculation = false) => {
     if (!preco) return;
+
+    if (!isRecalculation) {
+      setPreviouslyFound(new Set());
+    }
+
     setLoading(true);
     setSearching(true);
     setSearchCancelled(false);
     const precoDesejado = Number(preco);
 
-    // Pequeno delay para garantir renderização do loading
     await new Promise(resolve => setTimeout(resolve, 50));
     if (searchCancelled) {
       setLoading(false);
@@ -196,25 +214,74 @@ const App: React.FC = () => {
         setSearchResult({ status: 'not_found' });
       }
     } else {
-      // Busca combinatória assíncrona
+      const produtosFiltrados = produtos.filter(p => !previouslyFound.has(p.Código));
+
       let combinacao = await (await import("./utils/busca")).buscarCombinacaoGulosaAsync(
-        produtos, precoDesejado, 0.4, new Set(), blacklist, 5, () => searchCancelled
+        produtosFiltrados,
+        precoDesejado,
+        0.4,
+        new Set(),
+        blacklist,
+        5,
+        () => searchCancelled
       );
+
       if (searchCancelled) {
         setLoading(false);
         setSearching(false);
         return;
       }
+
       if (!combinacao || combinacao.length === 0) {
-        combinacao = await (await import("./utils/busca")).buscarCombinacaoExaustivaAsync(
-          produtos, precoDesejado, 0.4, 5, new Set(), blacklist, () => searchCancelled
-        );
+        const worker = new Worker(new URL('./workers/combinationWorker.ts', import.meta.url), { type: 'module' });
+        let workerResult: Produto[] | null = null;
+
+        const workerPromise = new Promise<Produto[] | null>((resolve) => {
+          worker.onmessage = (event) => {
+            const { type, result, error } = event.data;
+            if (type === 'result') {
+              resolve(result);
+            } else if (type === 'cancelled') {
+              resolve(null);
+            } else if (type === 'error') {
+              console.error("Worker error:", error);
+              resolve(null);
+            }
+          };
+
+          worker.postMessage({
+            type: 'startSearch',
+            payload: {
+              df: produtosFiltrados,
+              precoDesejado,
+              tolerancia: 0.4,
+              maxProdutos,
+              usados: Array.from(new Set()),
+              blacklist,
+            },
+          });
+        });
+
+        const cancellationCheckInterval = setInterval(() => {
+          if (searchCancelled) {
+            worker.postMessage({ type: 'cancel' });
+            clearInterval(cancellationCheckInterval);
+          }
+        }, 100);
+
+        workerResult = await workerPromise;
+        clearInterval(cancellationCheckInterval);
+        worker.terminate();
+
+        combinacao = workerResult;
       }
+
       if (searchCancelled) {
         setLoading(false);
         setSearching(false);
         return;
       }
+
       if (combinacao && combinacao.length > 0) {
         setSearchResult({ status: 'ok', combinacao: combinacao });
       } else {
@@ -225,10 +292,8 @@ const App: React.FC = () => {
     setSearching(false);
   };
 
-  // Estado para modal de confirmação do clear
   const [showClearModal, setShowClearModal] = useState(false);
 
-  // Função para limpar todos os dados
   const handleClearAll = () => {
     setProdutos([]);
     setRetirados([]);
@@ -240,7 +305,6 @@ const App: React.FC = () => {
     showNotification("Todos os dados foram apagados.");
   };
 
-  // Flag para mostrar loading global com botão cancelar
   const showGlobalCancel = searching && showCancel;
 
   return (
@@ -250,7 +314,6 @@ const App: React.FC = () => {
           {notification}
         </div>
       )}
-      {/* Modal de confirmação para limpar dados */}
       {showClearModal && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -263,20 +326,18 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
-      {/* Loader global com botão cancelar durante busca longa ou loading normal */}
       {(loading && (!searching || showGlobalCancel)) && (
         <div className="loader-overlay">
-          <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <div className="loader"></div>
             {showGlobalCancel && (
-              <button className="cancel-btn loading-cancel" onClick={handleCancelSearch} type="button" style={{marginTop: 32, minWidth: 180, fontSize: '1.1em', boxShadow: '0 2px 8px rgba(244,67,54,0.10)'}}>
+              <button className="cancel-btn loading-cancel" onClick={handleCancelSearch} type="button" style={{ marginTop: 32, minWidth: 180, fontSize: '1.1em', boxShadow: '0 2px 8px rgba(244,67,54,0.10)' }}>
                 Cancelar Busca
               </button>
             )}
           </div>
         </div>
       )}
-      {/* Botão flutuante para limpar dados */}
       <button
         className="clear-fab"
         title="Limpar todos os dados"
@@ -305,11 +366,14 @@ const App: React.FC = () => {
               setPreco={setPreco}
               searchMode={searchMode}
               setSearchMode={setSearchMode}
-              handleSearch={handleSearch}
+              handleSearch={() => handleSearch(false)}
+              handleRecalculate={handleRecalculate}
               searching={searching && !showGlobalCancel}
               onCancelSearch={handleCancelSearch}
               showCancel={showCancel && !showGlobalCancel}
               showGlobalCancel={showGlobalCancel}
+              maxProdutos={maxProdutos}
+              setMaxProdutos={setMaxProdutos}
             />
             <div className="controls">
               <FileUpload

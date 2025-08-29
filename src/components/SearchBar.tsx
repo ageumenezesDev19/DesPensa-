@@ -1,5 +1,6 @@
 import React from "react";
 import { Produto } from "../utils/estoque";
+import AnimatedButton from "./AnimatedButton";
 import "../styles/SearchBar.scss";
 
 interface Props {
@@ -12,27 +13,28 @@ interface Props {
   searchMode: "produto" | "combinacao";
   setSearchMode: (mode: "produto" | "combinacao") => void;
   handleSearch: () => void;
+  handleRecalculate: () => void;
   searching?: boolean;
   onCancelSearch?: () => void;
   showCancel?: boolean;
   showGlobalCancel?: boolean;
+  maxProdutos: number;
+  setMaxProdutos: React.Dispatch<React.SetStateAction<number>>;
 }
 
-const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, preco, setPreco, searchMode, setSearchMode, handleSearch, searching, onCancelSearch, showCancel }) => {
+const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, preco, setPreco, searchMode, setSearchMode, handleSearch, handleRecalculate, searching, onCancelSearch, showCancel, maxProdutos, setMaxProdutos }) => {
 
   const handleRetirarClick = (produto: Produto) => {
     onRetirar(produto);
-    setResult(null); // Clear result after withdrawal
+    setResult(null);
   };
 
   const handleRetirarCombinacaoClick = (combinacao: Produto[]) => {
     combinacao.forEach(produto => {
       onRetirar(produto);
     });
-    setResult(null); // Clear result after withdrawal
+    setResult(null);
   };
-
-  // Usa apenas a prop showCancel do App para exibir o botão cancelar
 
   return (
     <div className="search-bar animated-fadein">
@@ -56,10 +58,25 @@ const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, pr
           <option value="produto">Buscar Produto</option>
           <option value="combinacao">Buscar Combinação</option>
         </select>
-        <button onClick={handleSearch} disabled={produtos.length === 0 || !preco || !!searching}>
+        <button onClick={() => handleSearch()} disabled={produtos.length === 0 || !preco || !!searching}>
           Buscar
         </button>
+      </div>
+      {searchMode === "combinacao" && (
+        <div className="slider-container">
+          <label htmlFor="maxProdutos">Max. Itens:</label>
+          <input
+            type="range"
+            id="maxProdutos"
+            min="5"
+            max="20"
+            value={maxProdutos}
+            onChange={(e) => setMaxProdutos(Number(e.target.value))}
+            disabled={!!searching}
+          />
+          <span>{maxProdutos}</span>
         </div>
+      )}
 
       {searching && (
         <div className="search-loading">
@@ -79,9 +96,14 @@ const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, pr
           <p>
             <b>{result.produto.Descrição}</b> - R$ {Number(result.produto["Preço Venda"]).toFixed(2)}
           </p>
-          <button onClick={() => handleRetirarClick(result.produto)}>
-            Retirar 1 unidade
-          </button>
+          <div className="comb-actions single-product-actions">
+            <button onClick={() => handleRetirarClick(result.produto)}>
+              Retirar 1 unidade
+            </button>
+            <AnimatedButton onClick={handleRecalculate} title="Buscar outro produto" className="recalculate-btn">
+              Recalcular
+            </AnimatedButton>
+          </div>
         </div>
       )}
       {!searching && result && result.status === "ok" && searchMode === "combinacao" && (
@@ -96,9 +118,14 @@ const SearchBar: React.FC<Props> = ({ produtos, onRetirar, result, setResult, pr
           </ul>
           <div className="comb-row">
             <b>Total: R$ {result.combinacao.reduce((acc: number, p: any) => acc + p["Preço Venda"], 0).toFixed(2)}</b>
-            <button onClick={() => handleRetirarCombinacaoClick(result.combinacao)}>
-              Retirar Combinação
-            </button>
+            <div className="comb-actions">
+              <button onClick={() => handleRetirarCombinacaoClick(result.combinacao)}>
+                Retirar Combinação
+              </button>
+              <AnimatedButton onClick={handleRecalculate} title="Buscar outra combinação" className="recalculate-btn">
+                Recalcular
+              </AnimatedButton>
+            </div>
           </div>
         </div>
       )}
