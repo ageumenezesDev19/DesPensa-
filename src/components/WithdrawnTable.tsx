@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import "../styles/WithdrawnTable.scss";
 
 export interface Retirado {
@@ -14,34 +14,127 @@ interface Props {
 }
 
 const WithdrawnTable: React.FC<Props> = ({ produtos }) => {
+  const [selectedDate, setSelectedDate] = useState(new Date());
+
+  const withdrawnByDay = useMemo(() => {
+    const groups: { [key: string]: Retirado[] } = {};
+    produtos.forEach((p) => {
+      const date = new Date(p.Data.split(" ")[0]);
+      const dateString = date.toISOString().split("T")[0];
+      if (!groups[dateString]) {
+        groups[dateString] = [];
+      }
+      groups[dateString].push(p);
+    });
+    return groups;
+  }, [produtos]);
+
+  const handleDateChange = (days: number) => {
+    setSelectedDate((prevDate) => {
+      const newDate = new Date(prevDate);
+      newDate.setDate(newDate.getDate() + days);
+      return newDate;
+    });
+  };
+
+  const selectedDateString = selectedDate.toISOString().split("T")[0];
+  const productsForSelectedDay = withdrawnByDay[selectedDateString] || [];
+  const totalForSelectedDay = productsForSelectedDay.reduce(
+    (acc, p) => acc + Number(p["Preço Venda"]),
+    0
+  );
+
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat("pt-BR", {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    }).format(date);
+  };
+
+  const withdrawnByMonth = useMemo(() => {
+    const groups: { [key: string]: { [key: string]: Retirado[] } } = {};
+    Object.keys(withdrawnByDay).forEach((dateString) => {
+      const date = new Date(dateString);
+      const month = date.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+      if (!groups[month]) {
+        groups[month] = {};
+      }
+      groups[month][dateString] = withdrawnByDay[dateString];
+    });
+    return groups;
+  }, [withdrawnByDay]);
+
+  const sortedMonths = Object.keys(withdrawnByMonth).sort((a, b) => {
+    const [monthA, yearA] = a.split(' de ');
+    const [monthB, yearB] = b.split(' de ');
+    const dateA = new Date(`${monthA} 1, ${yearA}`);
+    const dateB = new Date(`${monthB} 1, ${yearB}`);
+    return dateB.getTime() - dateA.getTime();
+  });
+
   return (
-    <div className="withdrawn-table animated-fadein">
-      <h2>Produtos Retirados</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Código</th>
-            <th>Descrição</th>
-            <th>Quantidade Retirada</th>
-            <th>Preço Venda</th>
-            <th>Data</th>
-          </tr>
-        </thead>
-        <tbody>
-          {produtos.map((p, i) => (
-            <tr key={i}>
-              <td>{p.Código}</td>
-              <td>{p.Descrição}</td>
-              <td>{p["Quantidade Retirada"]}</td>
-              <td>R$ {Number(p["Preço Venda"]).toFixed(2)}</td>
-              <td>{p.Data}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="withdrawn-table-container animated-fadein">
+      <div className="date-navigator">
+        <button onClick={() => handleDateChange(-1)}>{"< Dia Anterior"}</button>
+        <h2>{formatDate(selectedDate)}</h2>
+        <button onClick={() => handleDateChange(1)}>{"Próximo Dia >"}</button>
+      </div>
+
+      <div className="day-summary">
+        <h3>Total do Dia: R$ {totalForSelectedDay.toFixed(2)}</h3>
+      </div>
+
+      {productsForSelectedDay.length > 0 ? (
+        <div className="withdrawn-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Descrição</th>
+                <th>Qtd.</th>
+                <th>Preço</th>
+                <th>Data</th>
+              </tr>
+            </thead>
+            <tbody>
+              {productsForSelectedDay.map((p, i) => (
+                <tr key={i}>
+                  <td>{p.Código}</td>
+                  <td>{p.Descrição}</td>
+                  <td>{p["Quantidade Retirada"]}</td>
+                  <td>R$ {Number(p["Preço Venda"]).toFixed(2)}</td>
+                  <td>{new Date(p.Data).toLocaleString('pt-BR')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p className="no-data">Nenhum produto retirado neste dia.</p>
+      )}
+
+      <div className="monthly-summary">
+        <h2>Histórico de Retiradas</h2>
+        {sortedMonths.map(month => (
+          <div key={month} className="month-section">
+            <h3>{month.charAt(0).toUpperCase() + month.slice(1)}</h3>
+            {Object.keys(withdrawnByMonth[month]).sort((a,b) => new Date(b).getTime() - new Date(a).getTime()).map(dateString => (
+              <div key={dateString} className="day-details">
+                <h4>{formatDate(new Date(dateString))} - Total: R$ {withdrawnByMonth[month][dateString].reduce((acc, p) => acc + Number(p["Preço Venda"]), 0).toFixed(2)}</h4>
+                <ul>
+                  {withdrawnByMonth[month][dateString].map((p, i) => (
+                    <li key={i}>{p.Descrição} - R$ {Number(p["Preço Venda"]).toFixed(2)}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
 
 export default WithdrawnTable;
-
