@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import "../styles/WithdrawnTable.scss";
 
 export interface Retirado {
@@ -15,6 +15,8 @@ interface Props {
 
 const WithdrawnTable: React.FC<Props> = ({ produtos }) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
+  const [expandedDays, setExpandedDays] = useState<{ [month: string]: Set<string> }>({});
 
   const withdrawnByDay = useMemo(() => {
     const groups: { [key: string]: Retirado[] } = {};
@@ -29,13 +31,53 @@ const WithdrawnTable: React.FC<Props> = ({ produtos }) => {
     return groups;
   }, [produtos]);
 
-  const handleDateChange = (days: number) => {
+  const handleDateChange = useCallback((days: number) => {
     setSelectedDate((prevDate) => {
       const newDate = new Date(prevDate);
       newDate.setDate(newDate.getDate() + days);
       return newDate;
     });
-  };
+  }, []);
+
+  const toggleMonth = useCallback((month: string) => {
+    setExpandedMonths(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(month)) {
+        newSet.delete(month);
+      } else {
+        newSet.add(month);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const toggleDay = useCallback((month: string, day: string) => {
+    setExpandedDays(prev => {
+      const monthDays = new Set(prev[month]);
+      if (monthDays.has(day)) {
+        monthDays.delete(day);
+      } else {
+        monthDays.add(day);
+      }
+      return { ...prev, [month]: monthDays };
+    });
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        handleDateChange(-1);
+      } else if (e.key === 'ArrowRight') {
+        handleDateChange(1);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleDateChange]);
 
   const selectedDateString = selectedDate.toISOString().split("T")[0];
   const productsForSelectedDay = withdrawnByDay[selectedDateString] || [];
@@ -117,21 +159,37 @@ const WithdrawnTable: React.FC<Props> = ({ produtos }) => {
 
       <div className="monthly-summary">
         <h2>Histórico de Retiradas</h2>
-        {sortedMonths.map(month => (
-          <div key={month} className="month-section">
-            <h3>{month.charAt(0).toUpperCase() + month.slice(1)}</h3>
-            {Object.keys(withdrawnByMonth[month]).sort((a,b) => new Date(b).getTime() - new Date(a).getTime()).map(dateString => (
-              <div key={dateString} className="day-details">
-                <h4>{formatDate(new Date(dateString))} - Total: R$ {withdrawnByMonth[month][dateString].reduce((acc, p) => acc + Number(p["Preço Venda"]), 0).toFixed(2)}</h4>
-                <ul>
-                  {withdrawnByMonth[month][dateString].map((p, i) => (
-                    <li key={i}>{p.Descrição} - R$ {Number(p["Preço Venda"]).toFixed(2)}</li>
+        {sortedMonths.map(month => {
+          const monthlyTotal = Object.values(withdrawnByMonth[month]).flat().reduce((acc, p) => acc + Number(p["Preço Venda"]), 0);
+
+          return (
+            <div key={month} className="month-section">
+              <h3 onClick={() => toggleMonth(month)} className="month-header">
+                <span>{month.charAt(0).toUpperCase() + month.slice(1)} - Total: R$ {monthlyTotal.toFixed(2)}</span>
+                <span className={`toggle-icon ${expandedMonths.has(month) ? 'expanded' : ''}`}></span>
+              </h3>
+              {expandedMonths.has(month) && (
+                <div className="month-content">
+                  {Object.keys(withdrawnByMonth[month]).sort((a,b) => new Date(b).getTime() - new Date(a).getTime()).map(dateString => (
+                    <div key={dateString} className="day-details">
+                      <h4 onClick={() => toggleDay(month, dateString)} className="day-header">
+                        {formatDate(new Date(dateString))} - Total: R$ {withdrawnByMonth[month][dateString].reduce((acc, p) => acc + Number(p["Preço Venda"]), 0).toFixed(2)}
+                        <span className={`toggle-icon ${expandedDays[month]?.has(dateString) ? 'expanded' : ''}`}></span>
+                      </h4>
+                      {expandedDays[month]?.has(dateString) && (
+                        <ul>
+                          {withdrawnByMonth[month][dateString].map((p, i) => (
+                            <li key={i}>{p.Descrição} - R$ {Number(p["Preço Venda"]).toFixed(2)}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        ))}
+                </div>
+              )}
+            </div>
+          )}
+        )}
       </div>
     </div>
   );
