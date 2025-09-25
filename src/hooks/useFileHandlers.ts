@@ -11,6 +11,7 @@ import { Retirado } from '../components/WithdrawnTable';
 interface FileHandlerProps {
   setLoading: (loading: boolean) => void;
   setProdutos: (produtos: Produto[]) => void;
+  produtos: Produto[];
   setRetirados: (retirados: Retirado[]) => void;
   setBlacklist: (blacklist: string[]) => void;
   showNotification: (message: string) => void;
@@ -19,6 +20,7 @@ interface FileHandlerProps {
 export const useFileHandlers = ({
   setLoading,
   setProdutos,
+  produtos,
   setRetirados,
   setBlacklist,
   showNotification,
@@ -43,7 +45,31 @@ export const useFileHandlers = ({
     setLoading(true);
     try {
       const retiradosData = carregarRetiradosFromString(csvContent);
-      setRetirados(retiradosData);
+      const novosRetirados = retiradosData.map((r: any) => {
+        const produtoCompleto = produtos.find(p => p.Código === r.Código);
+        const produtoParaRetirado: Produto = produtoCompleto || {
+          'Código': r.Código,
+          'Descrição': r.Descrição,
+          'Preço Venda': Number(r['Preço Venda']),
+          // Preencha outros campos obrigatórios da interface Produto com valores padrão
+          'Cód.Barras': '',
+          'Und.Sai.': '',
+          'Fornecedor': '',
+          'Quantidade': 0,
+          'Preço Custo': 0,
+          'Margem Lucro': 0,
+          'CSOSN': '',
+          'ELO': '',
+        };
+
+        return {
+          id: r.id || `${r.Código}-${Date.now()}`,
+          produto: produtoParaRetirado,
+          quantidadeRetirada: Number(r['Quantidade Retirada']),
+          Data: r.Data,
+        };
+      });
+      setRetirados(novosRetirados);
       showNotification("Retirados carregados com sucesso!");
     } catch (error) {
       console.error("Failed to load withdrawn products:", error);

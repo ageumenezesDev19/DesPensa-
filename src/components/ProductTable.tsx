@@ -16,6 +16,7 @@ const ProductTable: React.FC<Props> = ({ produtos }) => {
             <th>Código</th>
             <th>Descrição</th>
             <th>Quantidade</th>
+            <th>Unidade</th>
             <th>Preço Venda</th>
           </tr>
         </thead>
@@ -25,6 +26,7 @@ const ProductTable: React.FC<Props> = ({ produtos }) => {
               <td>{p.Código}</td>
               <td>{p.Descrição}</td>
               <td>{p.Quantidade}</td>
+              <td>{p['Und.Sai.']}</td>
               <td>R$ {Number(p["Preço Venda"]).toFixed(2)}</td>
             </tr>
           ))}
