@@ -1,19 +1,20 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import "../styles/WithdrawnTable.scss";
+import { Produto } from "../utils/estoque";
 
 export interface Retirado {
-  Código: string;
-  Descrição: string;
-  "Quantidade Retirada": string;
-  "Preço Venda": string;
+  id: string;
+  produto: Produto;
+  quantidadeRetirada: number;
   Data: string;
 }
 
 interface Props {
   produtos: Retirado[];
+  handleDelete: (id: string) => void;
 }
 
-const WithdrawnTable: React.FC<Props> = ({ produtos }) => {
+const WithdrawnTable: React.FC<Props> = ({ produtos, handleDelete }) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
   const [expandedDays, setExpandedDays] = useState<{ [month: string]: Set<string> }>({});
@@ -82,7 +83,7 @@ const WithdrawnTable: React.FC<Props> = ({ produtos }) => {
   const selectedDateString = selectedDate.toISOString().split("T")[0];
   const productsForSelectedDay = withdrawnByDay[selectedDateString] || [];
   const totalForSelectedDay = productsForSelectedDay.reduce(
-    (acc, p) => acc + Number(p["Preço Venda"]) * Number(p["Quantidade Retirada"]),
+    (acc, p) => acc + Number(p.produto["Preço Venda"]) * Number(p.quantidadeRetirada),
     0
   );
 
@@ -138,16 +139,20 @@ const WithdrawnTable: React.FC<Props> = ({ produtos }) => {
                 <th>Qtd.</th>
                 <th>Preço</th>
                 <th>Data</th>
+                <th>Ação</th>
               </tr>
             </thead>
             <tbody>
-              {productsForSelectedDay.map((p, i) => (
-                <tr key={i}>
-                  <td>{p.Código}</td>
-                  <td>{p.Descrição}</td>
-                  <td>{p["Quantidade Retirada"]}</td>
-                  <td>R$ {Number(p["Preço Venda"]).toFixed(2)}</td>
+              {productsForSelectedDay.map((p) => (
+                <tr key={p.id}>
+                  <td>{p.produto.Código}</td>
+                  <td>{p.produto.Descrição}</td>
+                  <td>{p.quantidadeRetirada}</td>
+                  <td>R$ {Number(p.produto["Preço Venda"]).toFixed(2)}</td>
                   <td>{new Date(p.Data).toLocaleString('pt-BR')}</td>
+                  <td>
+                    <button className="delete-btn" onClick={() => handleDelete(p.id)}>Excluir</button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -160,7 +165,7 @@ const WithdrawnTable: React.FC<Props> = ({ produtos }) => {
       <div className="monthly-summary">
         <h2>Histórico de Retiradas</h2>
         {sortedMonths.map(month => {
-          const monthlyTotal = Object.values(withdrawnByMonth[month]).flat().reduce((acc, p) => acc + (Number(p["Preço Venda"]) * Number(p["Quantidade Retirada"])), 0);
+          const monthlyTotal = Object.values(withdrawnByMonth[month]).flat().reduce((acc, p) => acc + (Number(p.produto["Preço Venda"]) * Number(p.quantidadeRetirada)), 0);
 
           return (
             <div key={month} className="month-section">
@@ -173,13 +178,16 @@ const WithdrawnTable: React.FC<Props> = ({ produtos }) => {
                   {Object.keys(withdrawnByMonth[month]).sort((a,b) => new Date(b).getTime() - new Date(a).getTime()).map(dateString => (
                     <div key={dateString} className="day-details">
                       <h4 onClick={() => toggleDay(month, dateString)} className="day-header">
-                        {formatDate(new Date(dateString))} - Total: R$ {withdrawnByMonth[month][dateString].reduce((acc, p) => acc + (Number(p["Preço Venda"]) * Number(p["Quantidade Retirada"])), 0).toFixed(2)}
+                        {formatDate(new Date(dateString))} - Total: R$ {withdrawnByMonth[month][dateString].reduce((acc, p) => acc + (Number(p.produto["Preço Venda"]) * Number(p.quantidadeRetirada)), 0).toFixed(2)}
                         <span className={`toggle-icon ${expandedDays[month]?.has(dateString) ? 'expanded' : ''}`}></span>
                       </h4>
                       {expandedDays[month]?.has(dateString) && (
                         <ul>
-                          {withdrawnByMonth[month][dateString].map((p, i) => (
-                            <li key={i}>{p.Descrição} ({p["Quantidade Retirada"]}x) - R$ {Number(p["Preço Venda"]).toFixed(2)}</li>
+                          {withdrawnByMonth[month][dateString].map((p) => (
+                            <li key={p.id}>
+                              {p.produto.Descrição} ({p.quantidadeRetirada}x) - R$ {Number(p.produto["Preço Venda"]).toFixed(2)}
+                              <button className="delete-btn-small" onClick={() => handleDelete(p.id)}>x</button>
+                            </li>
                           ))}
                         </ul>
                       )}

@@ -4,6 +4,7 @@
 @use "./BlacklistManager.scss";
 @use "./Loader.scss";
 @use "./AnimatedButton.scss";
+@use "./App.scss";
 
 .app-container {
   font-family: 'Inter', Arial, sans-serif;
@@ -98,7 +99,7 @@
       appearance: none;
       transition: border 0.2s;
       position: relative;
-      background-image: url('data:image/svg+xml;utf8,<svg fill="%232d2d6e" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+      background-image: url("data:image/svg+xml;utf8,<svg fill='%232d2d6e' height='20' viewBox='0 0 24 24' width='20' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
       background-repeat: no-repeat;
       background-position: right 0.7rem center;
       background-size: 1.2rem 1.2rem;

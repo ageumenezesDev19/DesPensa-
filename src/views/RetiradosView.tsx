@@ -9,6 +9,7 @@ interface RetiradosViewProps {
   setLoading: (loading: boolean) => void;
   onFileUpload: (content: string) => void;
   handleDownload: (filename: string, content: string) => void;
+  handleDelete: (id: string) => void;
 }
 
 export const RetiradosView: React.FC<RetiradosViewProps> = ({
@@ -16,10 +17,19 @@ export const RetiradosView: React.FC<RetiradosViewProps> = ({
   setLoading,
   onFileUpload,
   handleDownload,
+  handleDelete,
 }) => {
 
   const onDownload = () => {
-    const content = exportarRetiradosParaCsv(retirados, ['Código', 'Descrição', 'Quantidade Retirada', 'Preço Venda', 'Data']);
+    const retiradosParaExportar = retirados.map(r => ({
+      id: r.id,
+      Código: r.produto.Código,
+      Descrição: r.produto.Descrição,
+      'Quantidade Retirada': r.quantidadeRetirada,
+      'Preço Venda': r.produto['Preço Venda'],
+      Data: r.Data,
+    }));
+    const content = exportarRetiradosParaCsv(retiradosParaExportar, ['id', 'Código', 'Descrição', 'Quantidade Retirada', 'Preço Venda', 'Data']);
     handleDownload('retirados.csv', content);
   }
 
@@ -36,7 +46,7 @@ export const RetiradosView: React.FC<RetiradosViewProps> = ({
           Salvar/Baixar Retirados
         </button>
       </div>
-      <WithdrawnTable produtos={retirados} />
+      <WithdrawnTable produtos={retirados} handleDelete={handleDelete} />
     </>
   );
 };

@@ -35,6 +35,7 @@ const App: React.FC = () => {
   } = useFileHandlers({
     setLoading,
     setProdutos,
+    produtos,
     setRetirados,
     setBlacklist,
     showNotification,
@@ -72,10 +73,9 @@ const App: React.FC = () => {
     const dataFormatada = formatDateForDB(new Date());
 
     const produtoRetirado: Retirado = {
-      Código: produtoParaRetirar.Código,
-      Descrição: produtoParaRetirar.Descrição,
-      "Quantidade Retirada": String(quantidade),
-      "Preço Venda": String(produtoParaRetirar["Preço Venda"]),
+      id: `${produtoParaRetirar.Código}-${Date.now()}`,
+      produto: produtoParaRetirar,
+      quantidadeRetirada: quantidade,
       Data: dataFormatada,
     };
 
@@ -114,10 +114,9 @@ const App: React.FC = () => {
     const hoje = new Date();
     const dataFormatada = formatDateForDB(hoje);
     const novosRetirados: Retirado[] = combinacao.map(p => ({
-      Código: p.Código,
-      Descrição: p.Descrição,
-      "Quantidade Retirada": String(p.quantidadeUtilizada),
-      "Preço Venda": String(p["Preço Venda"]),
+      id: `${p.Código}-${Date.now()}`,
+      produto: p,
+      quantidadeRetirada: p.quantidadeUtilizada,
       Data: dataFormatada,
     }));
 
@@ -130,6 +129,27 @@ const App: React.FC = () => {
     setFocusSearchInput(true);
     setPreco("");
     setSearchResult(null);
+  };
+
+  const handleDeleteRetirado = (id: string) => {
+    const retiradoParaRestaurar = retirados.find(r => r.id === id);
+    if (!retiradoParaRestaurar) return;
+
+    setProdutos(prevProdutos => {
+      const produtoExistente = prevProdutos.find(p => p.Código === retiradoParaRestaurar.produto.Código);
+      if (produtoExistente) {
+        return prevProdutos.map(p => 
+          p.Código === retiradoParaRestaurar.produto.Código 
+            ? { ...p, Quantidade: p.Quantidade + retiradoParaRestaurar.quantidadeRetirada } 
+            : p
+        );
+      } else {
+        return [...prevProdutos, { ...retiradoParaRestaurar.produto, Quantidade: retiradoParaRestaurar.quantidadeRetirada }];
+      }
+    });
+
+    setRetirados(prevRetirados => prevRetirados.filter(r => r.id !== id));
+    showNotification("Item retornado ao estoque.");
   };
 
   const handleClearData = (type: "produtos" | "retirados" | "all") => {
@@ -232,6 +252,7 @@ const App: React.FC = () => {
             setLoading={setLoading}
             onFileUpload={handleLoadRetirados}
             handleDownload={(filename, content) => handleDownload(filename, content)}
+            handleDelete={handleDeleteRetirado}
           />
         )}
         {view === "blacklist" && (

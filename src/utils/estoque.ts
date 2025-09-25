@@ -3,16 +3,16 @@
 // Define the product interface based on db_utils.ts and python script
 export interface Produto {
   'Código': string;
+  'Cód.Barras': string;
   'Descrição': string;
-  'Validade': string;
-  'Lote': string;
-  'Preço Custo': number;
-  'Quantidade': number;
+  'Und.Sai.': string;
   'Fornecedor': string;
-  'Data Compra': string;
+  'Quantidade': number;
+  'Preço Custo': number;
   'Margem Lucro': number;
   'Preço Venda': number;
-  'Preço Lote': string; // or number if it's parsed
+  'CSOSN': string;
+  'ELO': string;
 }
 
 /**
