@@ -218,6 +218,7 @@ const App: React.FC = () => {
           <button onClick={() => setView("retirados")} className={view === 'retirados' ? 'active' : ''}>Retirados</button>
           <button onClick={() => setView("blacklist")} className={view === 'blacklist' ? 'active' : ''}>Blacklist</button>
         </nav>
+        <div className="made-by">Made by Ageu M. Costa</div>
       </header>
       <main>
         {loading && !searching && <Loader />}
