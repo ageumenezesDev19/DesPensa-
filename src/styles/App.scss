@@ -1,9 +1,23 @@
 header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+
+  .made-by {
+    font-style: italic;
+    color: #6c757d;
+    font-size: 0.9rem;
+  }
+
   nav {
     button {
       position: relative; // Needed for ::after positioning
       overflow: hidden; // Hide overflow of the underline
       transition: color 0.3s ease; // Smooth color transition
+      font-size: 1rem;
 
       &::after {
         content: '';
