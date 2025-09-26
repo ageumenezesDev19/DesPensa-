@@ -13,21 +13,19 @@ interface Props {
   setResult: (result: any) => void;
   preco: string;
   setPreco: (preco: string) => void;
-  searchMode: "produto" | "combinacao";
-  setSearchMode: (mode: "produto" | "combinacao") => void;
+  searchMode: "combinacao" | "produto";
+  setSearchMode: (mode: "combinacao" | "produto") => void;
   handleSearch: (isRecalculation: boolean, previouslyFoundSet: Set<string> | null) => void;
   handleRecalculate: () => void;
   searching?: boolean;
   onCancelSearch?: () => void;
   showCancel?: boolean;
   showGlobalCancel?: boolean;
-  maxProdutos: number;
-  setMaxProdutos: React.Dispatch<React.SetStateAction<number>>;
   focusInput?: boolean;
   setFocusInput?: (focus: boolean) => void;
 }
 
-const SearchBar: React.FC<Props> = ({ produtos, onRetirar, onRetirarCombinacao, result, setResult, preco, setPreco, searchMode, setSearchMode, handleSearch, handleRecalculate, searching, onCancelSearch, showCancel, maxProdutos, setMaxProdutos, focusInput, setFocusInput }) => {
+const SearchBar: React.FC<Props> = ({ produtos, onRetirar, onRetirarCombinacao, result, setResult, preco, setPreco, searchMode, setSearchMode, handleSearch, handleRecalculate, searching, onCancelSearch, showCancel, focusInput, setFocusInput }) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -82,28 +80,13 @@ const SearchBar: React.FC<Props> = ({ produtos, onRetirar, onRetirarCombinacao, 
           }}
           disabled={!!searching}
         >
-          <option value="produto">Buscar Produto</option>
           <option value="combinacao">Buscar Combinação</option>
+          <option value="produto">Buscar Produto</option>
         </select>
         <button onClick={() => handleSearch(false, null)} disabled={produtos.length === 0 || !preco || !!searching}>
           Buscar
         </button>
       </div>
-      {searchMode === "combinacao" && (
-        <div className="slider-container">
-          <label htmlFor="maxProdutos">Max. Itens:</label>
-          <input
-            type="range"
-            id="maxProdutos"
-            min="5"
-            max="50"
-            value={maxProdutos}
-            onChange={(e) => setMaxProdutos(Number(e.target.value))}
-            disabled={!!searching}
-          />
-          <span>{maxProdutos}</span>
-        </div>
-      )}
 
       {searching && (
         <div className="search-loading">

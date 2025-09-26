@@ -151,7 +151,7 @@ const WithdrawnTable: React.FC<Props> = ({ produtos, handleDelete }) => {
                   <td>R$ {Number(p.produto["Preço Venda"]).toFixed(2)}</td>
                   <td>{new Date(p.Data).toLocaleString('pt-BR')}</td>
                   <td>
-                    <button className="delete-btn" onClick={() => handleDelete(p.id)}>Excluir</button>
+                    <button className="delete-btn" onClick={() => handleDelete(p.id)}>Reverter</button>
                   </td>
                 </tr>
               ))}
@@ -186,7 +186,11 @@ const WithdrawnTable: React.FC<Props> = ({ produtos, handleDelete }) => {
                           {withdrawnByMonth[month][dateString].map((p) => (
                             <li key={p.id}>
                               {p.produto.Descrição} ({p.quantidadeRetirada}x) - R$ {Number(p.produto["Preço Venda"]).toFixed(2)}
-                              <button className="delete-btn-small" onClick={() => handleDelete(p.id)}>x</button>
+                              <button className="delete-btn-small" onClick={() => handleDelete(p.id)}>
+                                <span>
+                                  X
+                                </span>
+                              </button>
                             </li>
                           ))}
                         </ul>

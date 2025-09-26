@@ -22,8 +22,6 @@ interface ProdutosViewProps {
   onCancelSearch: () => void;
   showCancel: boolean;
   showGlobalCancel: boolean;
-  maxProdutos: number;
-  setMaxProdutos: React.Dispatch<React.SetStateAction<number>>;
   focusInput: boolean;
   setFocusInput: (focus: boolean) => void;
   setLoading: (loading: boolean) => void;
@@ -46,8 +44,6 @@ export const ProdutosView: React.FC<ProdutosViewProps> = ({
   onCancelSearch,
   showCancel,
   showGlobalCancel,
-  maxProdutos,
-  setMaxProdutos,
   focusInput,
   setFocusInput,
   setLoading,
@@ -71,8 +67,6 @@ export const ProdutosView: React.FC<ProdutosViewProps> = ({
         onCancelSearch={onCancelSearch}
         showCancel={showCancel && !showGlobalCancel}
         showGlobalCancel={showGlobalCancel}
-        maxProdutos={maxProdutos}
-        setMaxProdutos={setMaxProdutos}
         focusInput={focusInput}
         setFocusInput={setFocusInput}
       />

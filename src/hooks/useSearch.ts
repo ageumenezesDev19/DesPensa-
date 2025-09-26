@@ -9,11 +9,10 @@ interface SearchProps {
   blacklist: string[];
   preco: string;
   searchMode: 'produto' | 'combinacao';
-  maxProdutos: number;
   showNotification: (message: string) => void;
 }
 
-export const useSearch = ({ produtos, blacklist, preco, searchMode, maxProdutos, showNotification }: SearchProps) => {
+export const useSearch = ({ produtos, blacklist, preco, searchMode, showNotification }: SearchProps) => {
   const [searchResult, setSearchResult] = useState<{ status: string; produto?: Produto; combinacao?: ProdutoComQuantidade[] } | null>(null);
   const [searching, setSearching] = useState(false);
   const [searchCancelled, setSearchCancelled] = useState(false);
@@ -107,7 +106,6 @@ export const useSearch = ({ produtos, blacklist, preco, searchMode, maxProdutos,
             df: produtosFiltrados,
             precoDesejado,
             tolerancia: 0.4,
-            maxProdutos,
             usados: Array.from(currentPreviouslyFound),
             blacklist,
           },

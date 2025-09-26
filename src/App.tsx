@@ -21,8 +21,7 @@ export interface ProdutoComQuantidade extends Produto {
 const App: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [preco, setPreco] = useState<string>("");
-  const [searchMode, setSearchMode] = useState<"produto" | "combinacao">("produto");
-  const [maxProdutos, setMaxProdutos] = useState<number>(5);
+  const [searchMode, setSearchMode] = useState<"produto" | "combinacao">("combinacao");
   const [focusSearchInput, setFocusSearchInput] = useState<boolean>(true);
   const [showClearModal, setShowClearModal] = useState(false);
 
@@ -54,7 +53,6 @@ const App: React.FC = () => {
     blacklist,
     preco,
     searchMode,
-    maxProdutos,
     showNotification,
   });
 
@@ -239,8 +237,6 @@ const App: React.FC = () => {
             onCancelSearch={handleCancelSearch}
             showCancel={showCancel}
             showGlobalCancel={showGlobalCancel}
-            maxProdutos={maxProdutos}
-            setMaxProdutos={setMaxProdutos}
             focusInput={focusSearchInput}
             setFocusInput={setFocusSearchInput}
             setLoading={setLoading}
