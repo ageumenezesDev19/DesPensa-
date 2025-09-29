@@ -1,0 +1,114 @@
+.profile-management-modal {
+  h2 {
+    margin-bottom: 1.5rem;
+  }
+
+  .profile-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 8px; // for scrollbar space
+  }
+
+  .cancel-btn {
+    margin-top: 2rem;
+  }
+
+  .profile-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    border-radius: 6px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+
+    &.active {
+      border-color: #007bff;
+      background-color: #e7f1ff;
+    }
+
+    .profile-name {
+      font-weight: 500;
+    }
+
+    .profile-actions {
+      display: flex;
+      gap: 8px;
+
+      .action-btn {
+        padding: 4px 8px;
+        font-size: 0.8rem;
+        border: none;
+        border-radius: 4px;
+        color: white;
+        cursor: pointer;
+
+        &.backup {
+          background-color: #17a2b8;
+          &:hover { background-color: #138496; }
+        }
+        &.restore {
+          background-color: #ffc107;
+          color: #212529;
+          &:hover { background-color: #e0a800; }
+        }
+        &.delete {
+          background-color: #dc3545;
+          &:hover { background-color: #c82333; }
+        }
+      }
+    }
+  }
+
+  .modal-separator {
+    height: 1px;
+    background-color: #e0e0e0;
+    margin: 1.5rem 0;
+  }
+
+  .create-profile-section {
+    h3 {
+      margin-top: 0;
+      margin-bottom: 1rem;
+      font-size: 1.2rem;
+    }
+    .global-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .profile-creator {
+      display: flex;
+      gap: 8px;
+
+      input {
+        flex-grow: 1;
+        padding: 8px 12px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+      }
+      button {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        background-color: #28a745;
+        color: white;
+        cursor: pointer;
+      }
+    }
+    .action-btn.restore-global {
+      padding: 10px 16px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 6px;
+      background-color: #ffc107;
+      color: #212529;
+      cursor: pointer;
+      text-align: center;
+    }
+  }
+}

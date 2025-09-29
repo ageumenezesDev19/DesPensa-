@@ -2,19 +2,19 @@ import React, { useEffect, useRef } from "react";
 import { Produto } from "../utils/estoque";
 import AnimatedButton from "./AnimatedButton";
 import "../styles/SearchBar.scss";
-
-import { ProdutoComQuantidade } from "../App"; // Importando o novo tipo
+import { ProdutoComQuantidade } from "../App";
+import { SearchMode } from "../hooks/useSearch";
 
 interface Props {
   produtos: Produto[];
   onRetirar: (produto: Produto) => void;
-  onRetirarCombinacao: (combinacao: ProdutoComQuantidade[]) => void; // Tipo atualizado
-  result: { status: string; produto?: Produto; combinacao?: ProdutoComQuantidade[] } | null; // Tipo atualizado
+  onRetirarCombinacao: (combinacao: ProdutoComQuantidade[]) => void;
+  result: { status: string; produto?: Produto; combinacao?: ProdutoComQuantidade[] } | null;
   setResult: (result: any) => void;
   preco: string;
   setPreco: (preco: string) => void;
-  searchMode: "combinacao" | "produto";
-  setSearchMode: (mode: "combinacao" | "produto") => void;
+  searchMode: SearchMode;
+  setSearchMode: (mode: SearchMode) => void;
   handleSearch: (isRecalculation: boolean, previouslyFoundSet: Set<string> | null) => void;
   handleRecalculate: () => void;
   searching?: boolean;
@@ -48,7 +48,7 @@ const SearchBar: React.FC<Props> = ({ produtos, onRetirar, onRetirarCombinacao, 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       if (result && result.status === 'ok') {
-        if (searchMode === 'produto' && result.produto) {
+        if ((searchMode === 'produto_preco' || searchMode === 'produto_nome') && result.produto) {
           handleRetirarClick(result.produto);
         } else if (searchMode === 'combinacao' && result.combinacao) {
           handleRetirarCombinacaoClick(result.combinacao);
@@ -59,14 +59,26 @@ const SearchBar: React.FC<Props> = ({ produtos, onRetirar, onRetirarCombinacao, 
     }
   };
 
+  const getPlaceholder = () => {
+    switch (searchMode) {
+      case 'combinacao':
+      case 'produto_preco':
+        return "Pesquisar por preço (R$)";
+      case 'produto_nome':
+        return "Pesquisar por nome do produto";
+      default:
+        return "";
+    }
+  }
+
   return (
     <div className="search-bar animated-fadein">
       <div className="search-controls">
         <input
           ref={inputRef}
-          type="text"
-          pattern="[0-9,.]*"
-          placeholder="Pesquisar por preço (R$)"
+          type={searchMode === 'produto_nome' ? "text" : "text"} // Using text for both for flexibility with comma
+          pattern={searchMode !== 'produto_nome' ? "[0-9,.]*" : undefined}
+          placeholder={getPlaceholder()}
           value={preco}
           onChange={e => setPreco(e.target.value)}
           onKeyPress={handleKeyPress}
@@ -75,13 +87,14 @@ const SearchBar: React.FC<Props> = ({ produtos, onRetirar, onRetirarCombinacao, 
         <select
           value={searchMode}
           onChange={e => {
-            setSearchMode(e.target.value as any);
+            setSearchMode(e.target.value as SearchMode);
             setResult(null);
           }}
           disabled={!!searching}
         >
           <option value="combinacao">Buscar Combinação</option>
-          <option value="produto">Buscar Produto</option>
+          <option value="produto_preco">Buscar Produto por Preço</option>
+          <option value="produto_nome">Buscar Produto por Nome</option>
         </select>
         <button onClick={() => handleSearch(false, null)} disabled={produtos.length === 0 || !preco || !!searching}>
           Buscar
@@ -101,7 +114,7 @@ const SearchBar: React.FC<Props> = ({ produtos, onRetirar, onRetirarCombinacao, 
 
       {produtos.length === 0 && <p>Por favor, importe o arquivo `produtos.html` para começar.</p>}
 
-      {!searching && result && result.status === "ok" && searchMode === "produto" && result.produto && (
+      {!searching && result && result.status === "ok" && (searchMode === 'produto_preco' || searchMode === 'produto_nome') && result.produto && (
         <div className="search-result">
           <p>
             <b>{result.produto.Descrição}</b> - R$ {Number(result.produto["Preço Venda"]).toFixed(2)} (Estoque: {result.produto.Quantidade})
@@ -144,7 +157,7 @@ const SearchBar: React.FC<Props> = ({ produtos, onRetirar, onRetirarCombinacao, 
       )}
       {!searching && result && result.status !== "ok" && (
         <div className="search-result">
-          <p>Nenhum produto ou combinação encontrada para o preço desejado.</p>
+          <p>Nenhum produto ou combinação encontrada.</p>
         </div>
       )}
     </div>

@@ -4,11 +4,13 @@ import { Produto } from '../utils/estoque';
 import { buscarProdutoProximo } from '../utils/busca';
 import { ProdutoComQuantidade } from '../App';
 
+export type SearchMode = 'combinacao' | 'produto_preco' | 'produto_nome';
+
 interface SearchProps {
   produtos: Produto[];
   blacklist: string[];
   preco: string;
-  searchMode: 'produto' | 'combinacao';
+  searchMode: SearchMode;
   showNotification: (message: string) => void;
 }
 
@@ -61,16 +63,23 @@ export const useSearch = ({ produtos, blacklist, preco, searchMode, showNotifica
 
     setSearching(true);
     setSearchCancelled(false);
-    const precoDesejado = Number(preco.replace(',', '.'));
-
+    
     await new Promise(resolve => setTimeout(resolve, 50));
     if (searchCancelled) {
       setSearching(false);
       return;
     }
 
-    if (searchMode === "produto") {
-      const produtoEncontrado = buscarProdutoProximo(produtos, precoDesejado, blacklist);
+    if (searchMode === 'produto_nome' || searchMode === 'produto_preco') {
+      let produtoEncontrado: Produto | undefined;
+      if (searchMode === 'produto_nome') {
+        const searchTerm = preco.toLowerCase();
+        produtoEncontrado = produtos.find(p => p.Descrição.toLowerCase().includes(searchTerm) && !blacklist.includes(p.Código));
+      } else { // produto_preco
+        const precoDesejado = Number(preco.replace(',', '.'));
+        produtoEncontrado = buscarProdutoProximo(produtos, precoDesejado, blacklist);
+      }
+
       if (searchCancelled) {
         setSearching(false);
         return;
@@ -80,7 +89,14 @@ export const useSearch = ({ produtos, blacklist, preco, searchMode, showNotifica
       } else {
         setSearchResult({ status: 'not_found' });
       }
-    } else {
+    } else { // searchMode === 'combinacao'
+      const precoDesejado = Number(preco.replace(',', '.'));
+      if (isNaN(precoDesejado)) {
+        showNotification("Preço inválido para busca de combinação.");
+        setSearching(false);
+        return;
+      }
+
       const currentPreviouslyFound = previouslyFoundSet || previouslyFound;
       const produtosFiltrados = produtos.filter(p => !currentPreviouslyFound.has(p.Código));
 

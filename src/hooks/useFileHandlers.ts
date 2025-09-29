@@ -7,10 +7,11 @@ import {
 import { loadBlacklistFromString } from '../utils/blacklist_utils';
 import { Produto } from '../utils/estoque';
 import { Retirado } from '../components/WithdrawnTable';
+import { ImportMode } from '../components/FileUpload';
 
 interface FileHandlerProps {
   setLoading: (loading: boolean) => void;
-  setProdutos: (produtos: Produto[]) => void;
+  setProdutos: React.Dispatch<React.SetStateAction<Produto[]>>;
   produtos: Produto[];
   setRetirados: (retirados: Retirado[]) => void;
   setBlacklist: (blacklist: string[]) => void;
@@ -26,13 +27,35 @@ export const useFileHandlers = ({
   showNotification,
 }: FileHandlerProps) => {
 
-  const handleLoadProducts = (htmlContent: string) => {
+  const handleLoadProducts = (htmlContent: string, mode: ImportMode) => {
     setLoading(true);
     try {
       const { df } = carregarDadosHtmlFromString(htmlContent);
       const dadosTratados = tratarDados(df);
-      setProdutos(dadosTratados);
-      showNotification("Produtos carregados com sucesso!");
+
+      if (mode === 'replace') {
+        setProdutos(dadosTratados);
+        showNotification("Estoque substituído com sucesso!");
+      } else { // mode === 'add'
+        setProdutos(prevProdutos => {
+          const produtosMap = new Map(prevProdutos.map(p => [p.Código, p]));
+          
+          dadosTratados.forEach(novoProduto => {
+            const produtoExistente = produtosMap.get(novoProduto.Código);
+            if (produtoExistente) {
+              // Atualiza a quantidade se o produto já existe
+              produtoExistente.Quantidade += novoProduto.Quantidade;
+            } else {
+              // Adiciona o novo produto se não existir
+              produtosMap.set(novoProduto.Código, novoProduto);
+            }
+          });
+
+          return Array.from(produtosMap.values());
+        });
+        showNotification("Produtos adicionados ao estoque com sucesso!");
+      }
+
     } catch (error) {
       console.error("Failed to load products:", error);
       showNotification("Erro ao carregar produtos.");
