@@ -5,6 +5,8 @@ import FileUpload from '../components/FileUpload';
 import ProductTable from '../components/ProductTable';
 import { Produto } from '../utils/estoque';
 import { ProdutoComQuantidade } from '../App';
+import { ImportMode } from '../components/FileUpload';
+import { SearchMode } from '../hooks/useSearch';
 
 interface ProdutosViewProps {
   produtos: Produto[];
@@ -14,20 +16,18 @@ interface ProdutosViewProps {
   setSearchResult: (result: { status: string; produto?: Produto; combinacao?: ProdutoComQuantidade[] } | null) => void;
   preco: string;
   setPreco: (preco: string) => void;
-  searchMode: 'produto' | 'combinacao';
-  setSearchMode: (mode: 'produto' | 'combinacao') => void;
+  searchMode: SearchMode;
+  setSearchMode: (mode: SearchMode) => void;
   handleSearch: (isRecalculation?: boolean) => void;
   handleRecalculate: () => void;
   searching: boolean;
   onCancelSearch: () => void;
   showCancel: boolean;
   showGlobalCancel: boolean;
-  maxProdutos: number;
-  setMaxProdutos: React.Dispatch<React.SetStateAction<number>>;
   focusInput: boolean;
   setFocusInput: (focus: boolean) => void;
   setLoading: (loading: boolean) => void;
-  onFileUpload: (content: string) => void;
+  onFileUpload: (content: string, mode: ImportMode) => void;
 }
 
 export const ProdutosView: React.FC<ProdutosViewProps> = ({
@@ -46,8 +46,6 @@ export const ProdutosView: React.FC<ProdutosViewProps> = ({
   onCancelSearch,
   showCancel,
   showGlobalCancel,
-  maxProdutos,
-  setMaxProdutos,
   focusInput,
   setFocusInput,
   setLoading,
@@ -71,8 +69,6 @@ export const ProdutosView: React.FC<ProdutosViewProps> = ({
         onCancelSearch={onCancelSearch}
         showCancel={showCancel && !showGlobalCancel}
         showGlobalCancel={showGlobalCancel}
-        maxProdutos={maxProdutos}
-        setMaxProdutos={setMaxProdutos}
         focusInput={focusInput}
         setFocusInput={setFocusInput}
       />

@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import "./styles/main.scss";
+import "./styles/ProfileManager.scss";
+import { ProfileManager } from "./components/ProfileManager";
 import { Produto } from "./utils/estoque";
 import { Retirado } from "./components/WithdrawnTable";
 import { useNotification } from "./hooks/useNotification";
 import { useEstoque } from "./hooks/useEstoque";
 import { useViewManager } from "./hooks/useViewManager";
 import { useFileHandlers } from "./hooks/useFileHandlers";
-import { useSearch } from "./hooks/useSearch";
+import { useSearch, SearchMode } from "./hooks/useSearch"; // Import SearchMode
 import { ProdutosView } from "./views/ProdutosView";
 import { RetiradosView } from "./views/RetiradosView";
 import { BlacklistView } from "./views/BlacklistView";
@@ -21,8 +23,7 @@ export interface ProdutoComQuantidade extends Produto {
 const App: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [preco, setPreco] = useState<string>("");
-  const [searchMode, setSearchMode] = useState<"produto" | "combinacao">("produto");
-  const [maxProdutos, setMaxProdutos] = useState<number>(5);
+  const [searchMode, setSearchMode] = useState<SearchMode>("combinacao"); // Use imported type
   const [focusSearchInput, setFocusSearchInput] = useState<boolean>(true);
   const [showClearModal, setShowClearModal] = useState(false);
 
@@ -54,7 +55,6 @@ const App: React.FC = () => {
     blacklist,
     preco,
     searchMode,
-    maxProdutos,
     showNotification,
   });
 
@@ -221,6 +221,7 @@ const App: React.FC = () => {
         <div className="made-by">Made by Ageu M. Costa</div>
       </header>
       <main>
+        <ProfileManager />
         {loading && !searching && <Loader />}
         {view === "produtos" && (
           <ProdutosView
@@ -239,8 +240,6 @@ const App: React.FC = () => {
             onCancelSearch={handleCancelSearch}
             showCancel={showCancel}
             showGlobalCancel={showGlobalCancel}
-            maxProdutos={maxProdutos}
-            setMaxProdutos={setMaxProdutos}
             focusInput={focusSearchInput}
             setFocusInput={setFocusSearchInput}
             setLoading={setLoading}
