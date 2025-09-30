@@ -47,19 +47,38 @@
         color: white;
         cursor: pointer;
 
+        &.edit {
+          background-color: #6c757d;
+          &:hover { background-color: #5a6268; }
+        }
+        &.save {
+          background-color: #28a745;
+          &:hover { background-color: #218838; }
+        }
+        &.cancel {
+          background-color: #6c757d;
+          &:hover { background-color: #5a6268; }
+        }
         &.backup {
           background-color: #17a2b8;
           &:hover { background-color: #138496; }
-        }
-        &.restore {
-          background-color: #ffc107;
-          color: #212529;
-          &:hover { background-color: #e0a800; }
         }
         &.delete {
           background-color: #dc3545;
           &:hover { background-color: #c82333; }
         }
+      }
+    }
+
+    .profile-editor {
+      display: flex;
+      width: 100%;
+      gap: 8px;
+      input {
+        flex-grow: 1;
+        padding: 4px 8px;
+        border: 1px solid #007bff;
+        border-radius: 4px;
       }
     }
   }

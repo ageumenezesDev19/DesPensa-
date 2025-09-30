@@ -3,21 +3,70 @@ import * as cheerio from 'cheerio';
 
 // Função para carregar dados do HTML (produtos.html) a partir de string
 export function carregarDadosHtmlFromString(html: string): { df: any[] } {
-  const $ = cheerio.load(html); // Use cheerio.load for parsing HTML
-  const todasTd = $('td').toArray();
-  const colunas = todasTd.slice(0, 11).map(td => $(td).text().trim());
-  const dados = todasTd.slice(11).map(td => $(td).text().trim());
-  const linhas = [];
-  for (let i = 0; i < dados.length; i += 11) {
-    linhas.push(dados.slice(i, i + 11));
+  const normalizeColName = (col: string): string => {
+    const map: { [key: string]: string } = {
+      'cód. barras': 'Cód.Barras',
+      'cód.barras': 'Cód.Barras',
+      'cod.barras': 'Cód.Barras',
+      'und': 'Und.Sai.',
+      'und.sai.': 'Und.Sai.',
+      'descrição': 'Descrição',
+      'descricao': 'Descrição',
+      'codigo': 'Código',
+      'código': 'Código',
+      'fornecedor': 'Fornecedor',
+      'quantidade': 'Quantidade',
+      'preço custo': 'Preço Custo',
+      'precocusto': 'Preço Custo',
+      'margem lucro': 'Margem Lucro',
+      'margemlucro': 'Margem Lucro',
+      'preço venda': 'Preço Venda',
+      'precovenda': 'Preço Venda',
+      'csosn': 'CSOSN',
+      'st': 'CSOSN',
+      'elo': 'ELO',
+    };
+    return map[col.toLowerCase()] || col;
+  };
+
+  const $ = cheerio.load(html);
+
+  const headerCells = $('table tr').first().find('td');
+  const colunas = headerCells.map((_, el) => $(el).text().trim()).get();
+  const numColunas = colunas.length;
+
+  if (numColunas === 0) {
+    return { df: [] };
   }
-  const df = linhas.map(row => {
-    const obj: Record<string, string> = {};
+
+  const dataRows = $('table tr').slice(1);
+  const df = dataRows.map((_, row) => {
+    const rowCells = $(row).find('td');
+    if (rowCells.length !== numColunas) return null;
+
+    const rawObj: Record<string, string> = {};
     colunas.forEach((col, idx) => {
-      obj[col] = row[idx];
+      const normalizedCol = normalizeColName(col);
+      rawObj[normalizedCol] = $(rowCells[idx]).text().trim();
     });
-    return obj;
-  });
+
+    const produto: any = {
+      'Código': rawObj['Código'] || '',
+      'Cód.Barras': rawObj['Cód.Barras'] || '',
+      'Descrição': rawObj['Descrição'] || '',
+      'Und.Sai.': rawObj['Und.Sai.'] || '',
+      'Fornecedor': rawObj['Fornecedor'] || '',
+      'Quantidade': rawObj['Quantidade'] || '0',
+      'Preço Custo': rawObj['Preço Custo'] || '0',
+      'Margem Lucro': rawObj['Margem Lucro'] || '0',
+      'Preço Venda': rawObj['Preço Venda'] || '0',
+      'CSOSN': rawObj['CSOSN'] || '',
+      'ELO': rawObj['ELO'] || '',
+    };
+
+    return produto;
+  }).get().filter(item => item !== null && item['Código']);
+
   return { df };
 }
 

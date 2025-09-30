@@ -177,5 +177,44 @@ export function useProfiles() {
     }
   }, [profiles]);
 
-  return { profiles, activeProfile, setActiveProfile, createProfile, deleteProfile, backupProfile, restoreProfile };
+  const editProfileName = useCallback((oldName: string, newName: string) => {
+    if (!newName || oldName === newName) return;
+    if (oldName === DEFAULT_PROFILE) {
+      alert('Não é possível renomear o perfil padrão.');
+      return;
+    }
+    if (profiles.includes(newName)) {
+      alert(`Um perfil com o nome "${newName}" já existe.`);
+      return;
+    }
+
+    try {
+      // Move data to new keys
+      PROFILE_DATA_KEYS.forEach(key => {
+        const data = window.localStorage.getItem(getProfiledKey(oldName, key));
+        if (data) {
+          window.localStorage.setItem(getProfiledKey(newName, key), data);
+          window.localStorage.removeItem(getProfiledKey(oldName, key));
+        }
+      });
+
+      // Update profile list
+      const newProfiles = profiles.map(p => (p === oldName ? newName : p));
+      window.localStorage.setItem(PROFILES_KEY, JSON.stringify(newProfiles));
+
+      // Update active profile if it was the one being edited
+      if (activeProfile === oldName) {
+        window.localStorage.setItem(ACTIVE_PROFILE_KEY, newName);
+      }
+
+      alert(`Perfil "${oldName}" foi renomeado para "${newName}". A aplicação será recarregada.`);
+      window.location.reload();
+
+    } catch (error) {
+      console.error(`Failed to rename profile "${oldName}".`, error);
+      alert("Ocorreu um erro ao renomear o perfil.");
+    }
+  }, [profiles, activeProfile]);
+
+  return { profiles, activeProfile, setActiveProfile, createProfile, deleteProfile, backupProfile, restoreProfile, editProfileName };
 }
