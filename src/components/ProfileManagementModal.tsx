@@ -1,7 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useProfiles } from '../hooks/useProfiles';
 import { useNotification } from '../hooks/useNotification';
-import { ConfirmationModal } from './ConfirmationModal'; // Import the new modal
+import { ConfirmationModal } from './ConfirmationModal';
 import '../styles/Modal.scss';
 import '../styles/ProfileManagementModal.scss';
 
@@ -10,12 +10,30 @@ interface Props {
 }
 
 export const ProfileManagementModal: React.FC<Props> = ({ onClose }) => {
-  const { profiles, activeProfile, createProfile, deleteProfile, backupProfile, restoreProfile } = useProfiles();
-  const { showNotification } = useNotification();
+  const {
+    profiles,
+    activeProfile,
+    createProfile,
+    deleteProfile,
+    backupProfile,
+    restoreProfile,
+    editProfileName
+  } = useProfiles();
 
+  const { showNotification } = useNotification();
   const [newProfileName, setNewProfileName] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [editingProfile, setEditingProfile] = useState<string | null>(null);
+  const [editingProfileName, setEditingProfileName] = useState('');
   const restoreFileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editingProfile) {
+      setEditingProfileName(editingProfile);
+    } else {
+      setEditingProfileName('');
+    }
+  }, [editingProfile]);
 
   const handleCreate = () => {
     if (newProfileName.trim()) {
@@ -46,6 +64,13 @@ export const ProfileManagementModal: React.FC<Props> = ({ onClose }) => {
     }
   };
 
+  const handleEdit = () => {
+    if (editingProfileName.trim() && editingProfile) {
+      editProfileName(editingProfile, editingProfileName.trim());
+      setEditingProfile(null);
+    }
+  };
+
   const handleRestoreClick = () => {
     restoreFileInputRef.current?.click();
   };
@@ -73,14 +98,31 @@ export const ProfileManagementModal: React.FC<Props> = ({ onClose }) => {
           <div className="profile-list">
             {profiles.map(profile => (
               <div key={profile} className={`profile-item ${profile === activeProfile ? 'active' : ''}`}>
-                <span className="profile-name">
-                  {profile}
-                  {profile === activeProfile && ' (Ativo)'}
-                </span>
-                <div className="profile-actions">
-                  <button className="action-btn backup" onClick={() => handleBackup(profile)}>Backup</button>
-                  <button className="action-btn delete" onClick={() => handleDeleteClick(profile)}>Excluir</button>
-                </div>
+                {editingProfile === profile ? (
+                  <div className="profile-editor">
+                    <input 
+                      type="text" 
+                      value={editingProfileName}
+                      onChange={(e) => setEditingProfileName(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleEdit()}
+                      autoFocus
+                    />
+                    <button className="action-btn save" onClick={handleEdit}>Salvar</button>
+                    <button className="action-btn cancel" onClick={() => setEditingProfile(null)}>Cancelar</button>
+                  </div>
+                ) : (
+                  <>
+                    <span className="profile-name">
+                      {profile}
+                      {profile === activeProfile && ' (Ativo)'}
+                    </span>
+                    <div className="profile-actions">
+                      <button className="action-btn edit" onClick={() => setEditingProfile(profile)}>Editar</button>
+                      <button className="action-btn backup" onClick={() => handleBackup(profile)}>Backup</button>
+                      <button className="action-btn delete" onClick={() => handleDeleteClick(profile)}>Excluir</button>
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>

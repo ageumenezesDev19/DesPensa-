@@ -1,8 +1,8 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const ACTIVE_PROFILE_KEY = 'active_user_profile';
-const DEFAULT_PROFILE = 'default';
+const DEFAULT_PROFILE = 'Default';
 
 // Helper function to get the active profile
 const getActiveProfile = (): string => {
@@ -20,16 +20,14 @@ const getProfiledKey = (key: string): string => {
   return `profile_${activeProfile}_${key}`;
 };
 
-
 export function useStorage<T>(key: string, initialValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
-  const profiledKey = getProfiledKey(key);
-
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {
+      const profiledKey = getProfiledKey(key);
       const item = window.localStorage.getItem(profiledKey);
       return item ? JSON.parse(item) : initialValue;
     } catch (error) {
-      console.error(`Error reading localStorage key “${profiledKey}”:`, error);
+      console.error(`Error reading localStorage key “${getProfiledKey(key)}”:`, error);
       return initialValue;
     }
   });
@@ -38,11 +36,31 @@ export function useStorage<T>(key: string, initialValue: T): [T, React.Dispatch<
     try {
       const valueToStore = value instanceof Function ? value(storedValue) : value;
       setStoredValue(valueToStore);
+      const profiledKey = getProfiledKey(key);
       window.localStorage.setItem(profiledKey, JSON.stringify(valueToStore));
     } catch (error) {
-      console.error(`Error setting localStorage key “${profiledKey}”:`, error);
+      console.error(`Error setting localStorage key “${getProfiledKey(key)}”:`, error);
     }
   };
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === getProfiledKey(key)) {
+        try {
+          setStoredValue(e.newValue ? JSON.parse(e.newValue) : initialValue);
+        } catch (error) {
+          console.error(`Error parsing new value for “${getProfiledKey(key)}”:`, error);
+          setStoredValue(initialValue);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [key, initialValue]);
 
   return [storedValue, setValue];
 }
