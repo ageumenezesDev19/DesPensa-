@@ -78,19 +78,29 @@ async function buscarCombinacaoOtimizada(
   }
 
   const precoCombinacaoAtualCents = combinacao.reduce((acc, p) => acc + Math.round(p['Preço Venda'] * 100) * p.quantidadeUtilizada, 0);
-  const diferencaRestanteCents = precoDesejadoCents - precoCombinacaoAtualCents;
+  let diferencaRestanteCents = precoDesejadoCents - precoCombinacaoAtualCents;
 
-  if (diferencaRestanteCents >= 10 && produtosKg.length > 0 && combinacao.length < maxProdutos) { // Only top-off if difference is 10 cents or more
+  if (diferencaRestanteCents >= 10 && produtosKg.length > 0 && combinacao.length < maxProdutos) {
     produtosKg.sort((a, b) => a['Preço Venda'] - b['Preço Venda']);
-    const produtoKgParaTopOff = produtosKg[0];
 
-    if (produtoKgParaTopOff) {
-      const precoProdutoKgCents = Math.round(produtoKgParaTopOff['Preço Venda'] * 100);
+    for (const produtoKg of produtosKg) {
+      if (diferencaRestanteCents < 1 || combinacao.length >= maxProdutos) { // Stop if difference is less than 1 cent
+        break;
+      }
+
+      const precoProdutoKgCents = Math.round(produtoKg['Preço Venda'] * 100);
       if (precoProdutoKgCents > 0) {
         const quantidadeNecessaria = diferencaRestanteCents / precoProdutoKgCents;
+        const quantidadeDisponivel = produtoKg.Quantidade;
 
-        if (quantidadeNecessaria > 0 && quantidadeNecessaria <= produtoKgParaTopOff.Quantidade) {
-          combinacao.push({ ...produtoKgParaTopOff, quantidadeUtilizada: Number(quantidadeNecessaria.toFixed(3)) });
+        const quantidadeUtilizada = Math.min(quantidadeNecessaria, quantidadeDisponivel);
+
+        if (quantidadeUtilizada > 0) {
+          const quantidadeFinal = Number(quantidadeUtilizada.toFixed(3));
+          if (quantidadeFinal > 0) { // Ensure we are adding a non-zero quantity
+            combinacao.push({ ...produtoKg, quantidadeUtilizada: quantidadeFinal });
+            diferencaRestanteCents -= precoProdutoKgCents * quantidadeFinal;
+          }
         }
       }
     }
