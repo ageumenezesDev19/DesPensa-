@@ -55,15 +55,12 @@ async function buscarCombinacaoOtimizada(
   }
 
   let melhorPrecoCents = 0;
-  let menorDiferenca = Infinity;
 
-  for (let j = precoDesejadoCents; j <= limiteMaxPreco; j++) {
+  // Strategy 1: Find the best combination of unit products with a total value <= precoDesejadoCents.
+  for (let j = precoDesejadoCents; j >= 0; j--) {
     if (dp[j] > 0) {
-      const diferenca = Math.abs(j - precoDesejadoCents);
-      if (diferenca < menorDiferenca) {
-        menorDiferenca = diferenca;
-        melhorPrecoCents = j;
-      }
+      melhorPrecoCents = j;
+      break; // Found the highest value at or below the target
     }
   }
 
@@ -80,7 +77,7 @@ async function buscarCombinacaoOtimizada(
   const precoCombinacaoAtualCents = combinacao.reduce((acc, p) => acc + Math.round(p['Preço Venda'] * 100) * p.quantidadeUtilizada, 0);
   let diferencaRestanteCents = precoDesejadoCents - precoCombinacaoAtualCents;
 
-  if (diferencaRestanteCents >= 10 && produtosKg.length > 0 && combinacao.length < maxProdutos) {
+  if (diferencaRestanteCents >= 1 && produtosKg.length > 0 && combinacao.length < maxProdutos) {
     produtosKg.sort((a, b) => a['Preço Venda'] - b['Preço Venda']);
 
     for (const produtoKg of produtosKg) {
@@ -102,6 +99,30 @@ async function buscarCombinacaoOtimizada(
             diferencaRestanteCents -= precoProdutoKgCents * quantidadeFinal;
           }
         }
+      }
+    }
+  }
+
+  // Fallback Strategy: If the primary strategy yielded no results, find the closest possible match.
+  if (combinacao.length === 0) {
+    let menorDiferenca = Infinity;
+    let melhorPrecoFallback = 0;
+    for (let j = 1; j <= limiteMaxPreco; j++) {
+      if (dp[j] > 0) {
+        const diferenca = Math.abs(j - precoDesejadoCents);
+        if (diferenca < menorDiferenca) {
+          menorDiferenca = diferenca;
+          melhorPrecoFallback = j;
+        }
+      }
+    }
+
+    if (melhorPrecoFallback > 0) {
+      let precoAtual = melhorPrecoFallback;
+      while (precoAtual > 0 && backtrack[precoAtual]) {
+        const { produto, quantidade } = backtrack[precoAtual];
+        combinacao.push({ ...produto, quantidadeUtilizada: quantidade });
+        precoAtual -= Math.round(produto['Preço Venda'] * 100) * quantidade;
       }
     }
   }
