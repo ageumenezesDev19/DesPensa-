@@ -69,7 +69,7 @@ export function useProfiles() {
       try {
         window.localStorage.setItem(ACTIVE_PROFILE_KEY, profileName);
         setActiveProfileState(profileName);
-        window.location.reload();
+        window.dispatchEvent(new CustomEvent('profileChanged'));
       } catch (error) {
         console.error(`Failed to set active profile to "${profileName}".`, error);
       }

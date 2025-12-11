@@ -1,159 +1,260 @@
-import { Produto } from '../utils/estoque';
+// src/workers/combinationWorker.ts
 
-interface ProdutoComQuantidade extends Produto {
-  quantidadeUtilizada: number;
+interface Product {
+  COD: string;
+  NOME: string;
+  PRECO: number;
+  TIPO: 'UND' | 'KG' | 'SC';
+  estoque: number;
 }
 
-async function buscarCombinacaoOtimizada(
-  df: Produto[],
-  precoDesejado: number,
-  tolerancia = 0.4,
-  maxProdutos = 10,
-  usados = new Set<string>(),
-  blacklist: string[] = [],
-  isCancelled?: () => boolean
-): Promise<ProdutoComQuantidade[] | null> {
+interface Combination {
+  products: Product[];
+  total: number;
+  quantity: { [key: string]: number };
+}
+
+// Helper to calculate total in cents to avoid floating point issues
+const calculateTotalInCents = (
+  combination: Product[],
+  quantity: { [key: string]: number },
+  productsInCents: Map<string, number>
+): number => {
+  return combination.reduce((acc, product) => {
+    const qty = quantity[product.COD] || 0;
+    const priceInCents = productsInCents.get(product.COD) || 0;
+    return acc + Math.round(priceInCents * qty);
+  }, 0);
+};
+
+
+const findBestCombination = (
+  products: Product[],
+  targetPrice: number,
+  inventory: { [key: string]: number },
+  useFractional: boolean = true
+): Combination | null => {
+  // --- Setup: Convert all prices to cents ---
+  const targetCents = Math.round(targetPrice * 100);
+  const productsInCents = new Map<string, number>();
+  products.forEach(p => productsInCents.set(p.COD, Math.round(p.PRECO * 100)));
+
+  let bestCombination: Combination | null = null;
+  let minDiff = Infinity;
+
+  const unitProducts = products.filter(p => p.TIPO === 'UND');
+  const fractionalProducts = products.filter(p => (p.TIPO === 'KG' || p.TIPO === 'SC') && p.PRECO > 0).sort((a, b) => b.PRECO - a.PRECO);
+
+  // --- Recursive search function using cents ---
+  const findUnitCombinations = (
+    remainingCents: number,
+    currentIndex: number,
+    currentCombination: Product[],
+    currentQuantity: { [key: string]: number }
+  ) => {
+    if (remainingCents < 0) {
+      return;
+    }
+
+    const totalCents = calculateTotalInCents(currentCombination, currentQuantity, productsInCents);
+    const diff = Math.abs(totalCents - targetCents);
+
+    const totalItems = Object.keys(currentQuantity).length;
+    const bestTotalItems = bestCombination ? Object.keys(bestCombination.quantity).length : Infinity;
+    const isBetter = diff < minDiff || (diff === minDiff && totalItems < bestTotalItems);
+
+    if (isBetter) {
+      minDiff = diff;
+      // Ensure product list is unique to prevent display bugs
+      const uniqueProducts = [...new Map(currentCombination.map(p => [p.COD, p])).values()];
+      bestCombination = {
+        products: uniqueProducts,
+        total: totalCents / 100,
+        quantity: { ...currentQuantity },
+      };
+    }
+
+    if (minDiff === 0) { // Exact match found
+      return;
+    }
+
+    for (let i = currentIndex; i < unitProducts.length; i++) {
+      const product = unitProducts[i];
+      const availableStock = inventory[product.COD] ?? product.estoque;
+      const productPriceCents = productsInCents.get(product.COD) || 0;
+
+      if (availableStock > (currentQuantity[product.COD] || 0) && remainingCents >= productPriceCents) {
+        currentCombination.push(product);
+        currentQuantity[product.COD] = (currentQuantity[product.COD] || 0) + 1;
+
+        findUnitCombinations(
+          remainingCents - productPriceCents,
+          i, // Allow using the same product again
+          currentCombination,
+          currentQuantity
+        );
+
+        // Backtrack
+        currentQuantity[product.COD] -= 1;
+        if (currentQuantity[product.COD] === 0) {
+          delete currentQuantity[product.COD];
+        }
+        currentCombination.pop();
+        
+        if (minDiff === 0) return; // Early exit if an exact match was found in the recursive call
+      }
+    }
+  };
+
+  // --- Main Logic ---
+
+  // 1. Find the best combination using only unit products
+  findUnitCombinations(targetCents, 0, [], {});
   
-  const produtosFiltrados = df.filter(p => 
-    p['Preço Venda'] > 0 && 
-    p['Quantidade'] > 0 &&
-    !usados.has(p['Código']) &&
-    !blacklist.some(termo => p['Descrição'].toLowerCase().includes(termo.toLowerCase()))
-  );
+  if (minDiff === 0) {
+      return bestCombination;
+  }
 
-  const produtosUnidade = produtosFiltrados.filter(p => p['Und.Sai.'] !== 'KG');
-  const produtosKg = produtosFiltrados.filter(p => p['Und.Sai.'] === 'KG');
+  if (useFractional) {
+    let initialCents = 0;
+    let initialQuantity: { [key: string]: number } = {};
+    let initialProducts: Product[] = [];
 
-  const precoDesejadoCents = Math.round(precoDesejado * 100);
-  const toleranciaCents = Math.round(tolerancia * 100);
-  const limiteMaxPreco = precoDesejadoCents + toleranciaCents;
+    if (bestCombination) {
+      const combo = bestCombination as Combination;
+      initialCents = Math.round(combo.total * 100);
+      initialQuantity = { ...combo.quantity };
+      initialProducts = [...combo.products];
+    }
+    
+    let remainingCents = targetCents - initialCents;
 
-  const dp = new Array(limiteMaxPreco + 1).fill(0);
-  const backtrack = new Array(limiteMaxPreco + 1).fill(null);
+    if (remainingCents > 0) {
+      // Create copies to modify
+      const newQuantity: { [key: string]: number } = { ...initialQuantity };
+      const newProducts = [...initialProducts];
 
-  for (const produto of produtosUnidade) {
-    if (isCancelled && isCancelled()) return null;
+      for (const fractionalProduct of fractionalProducts) {
+        if (remainingCents <= 0) break;
 
-    const precoProdutoCents = Math.round(produto['Preço Venda'] * 100);
+        const availableStock = inventory[fractionalProduct.COD] ?? fractionalProduct.estoque;
+        const productPriceCents = productsInCents.get(fractionalProduct.COD) || 0;
 
-    for (let j = limiteMaxPreco; j >= precoProdutoCents; j--) {
-      for (let k = 1; k <= produto['Quantidade']; k++) {
-        const custoTotalProduto = precoProdutoCents * k;
-        if (j >= custoTotalProduto) {
-          const valorAnterior = dp[j - custoTotalProduto];
-          const novoValor = valorAnterior + custoTotalProduto;
-          
-          if (novoValor > dp[j]) {
-            dp[j] = novoValor;
-            backtrack[j] = { produto, quantidade: k };
+        if (availableStock > 0 && productPriceCents > 0) {
+          const neededQty = remainingCents / productPriceCents;
+          const qtyToTake = Math.min(neededQty, availableStock);
+
+          if (qtyToTake > 0) {
+            const existingQty = newQuantity[fractionalProduct.COD] || 0;
+            if (existingQty === 0) {
+              newProducts.push(fractionalProduct);
+            }
+            newQuantity[fractionalProduct.COD] = existingQty + qtyToTake;
+            remainingCents -= Math.round(qtyToTake * productPriceCents);
           }
-        } else {
-          break;
         }
       }
-    }
-  }
+      
+      const finalTotalCents = calculateTotalInCents(newProducts, newQuantity, productsInCents);
+      const finalDiff = Math.abs(finalTotalCents - targetCents);
 
-  let melhorPrecoCents = 0;
-  let menorDiferenca = Infinity;
-
-  for (let j = precoDesejadoCents; j <= limiteMaxPreco; j++) {
-    if (dp[j] > 0) {
-      const diferenca = Math.abs(j - precoDesejadoCents);
-      if (diferenca < menorDiferenca) {
-        menorDiferenca = diferenca;
-        melhorPrecoCents = j;
+      if (finalDiff < minDiff) {
+        minDiff = finalDiff;
+        bestCombination = {
+          products: newProducts,
+          total: finalTotalCents / 100,
+          quantity: newQuantity,
+        };
       }
     }
-  }
-
-  let combinacao: ProdutoComQuantidade[] = [];
-  if (melhorPrecoCents > 0) {
-    let precoAtual = melhorPrecoCents;
-    while (precoAtual > 0 && backtrack[precoAtual]) {
-      const { produto, quantidade } = backtrack[precoAtual];
-      combinacao.push({ ...produto, quantidadeUtilizada: quantidade });
-      precoAtual -= Math.round(produto['Preço Venda'] * 100) * quantidade;
+    
+    if (minDiff === 0) {
+        return bestCombination;
     }
   }
 
-  const precoCombinacaoAtualCents = combinacao.reduce((acc, p) => acc + Math.round(p['Preço Venda'] * 100) * p.quantidadeUtilizada, 0);
-  const diferencaRestanteCents = precoDesejadoCents - precoCombinacaoAtualCents;
-
-  if (diferencaRestanteCents >= 10 && produtosKg.length > 0 && combinacao.length < maxProdutos) { // Only top-off if difference is 10 cents or more
-    produtosKg.sort((a, b) => a['Preço Venda'] - b['Preço Venda']);
-    const produtoKgParaTopOff = produtosKg[0];
-
-    if (produtoKgParaTopOff) {
-      const precoProdutoKgCents = Math.round(produtoKgParaTopOff['Preço Venda'] * 100);
-      if (precoProdutoKgCents > 0) {
-        const quantidadeNecessaria = diferencaRestanteCents / precoProdutoKgCents;
-
-        if (quantidadeNecessaria > 0 && quantidadeNecessaria <= produtoKgParaTopOff.Quantidade) {
-          combinacao.push({ ...produtoKgParaTopOff, quantidadeUtilizada: Number(quantidadeNecessaria.toFixed(3)) });
-        }
-      }
-    }
-  }
-
-  if (combinacao.length === 0) {
-    return null;
-  }
-
-  // Group combination
-  const grouped = new Map<string, { produto: Produto, quantidade: number }>();
-  for (const p of combinacao) {
-    const existing = grouped.get(p.Código);
-    if (existing) {
-      existing.quantidade += p.quantidadeUtilizada;
-    } else {
-      grouped.set(p.Código, { produto: p, quantidade: p.quantidadeUtilizada });
-    }
-  }
-
-  const finalCombination: ProdutoComQuantidade[] = [];
-  for (const [_, value] of grouped.entries()) {
-    finalCombination.push({ ...value.produto, quantidadeUtilizada: value.quantidade });
-  }
-
-  return finalCombination;
-}
+  return bestCombination;
+};
 
 
-// Listener para mensagens da thread principal
-self.onmessage = async (event) => {
-  const { type, payload } = event.data;
+self.onmessage = (e: MessageEvent) => {
+  const { type, payload } = e.data;
 
   if (type === 'startSearch') {
-    const { df, precoDesejado, tolerancia, maxProdutos, usados, blacklist } = payload;
-    let cancelled = false;
-    const isCancelled = () => cancelled;
+    const { df, precoDesejado, blacklist } = payload;
 
-    const cancelListener = (cancelEvent: MessageEvent) => {
-      if (cancelEvent.data.type === 'cancel') {
-        cancelled = true;
-        self.removeEventListener('message', cancelListener);
-      }
-    };
-    self.addEventListener('message', cancelListener);
+    const productsRaw: Product[] = df.map((p: any) => {
+      // Normalize price and stock types
+      const precoNum = typeof p['Preço Venda'] === 'string' ? parseFloat(p['Preço Venda'].replace(/\./g, '').replace(',', '.')) : Number(p['Preço Venda']);
+      const estoqueNum = typeof p['Quantidade'] === 'string' ? parseFloat(p['Quantidade'].replace(/\./g, '').replace(',', '.')) : Number(p['Quantidade']);
+
+      // Determine type from unit fields robustly
+      const rawUnit = (p['Und.Sai.'] || p['Und'] || '').toString().toLowerCase();
+      let tipo: Product['TIPO'] = 'UND';
+      if (rawUnit.includes('kg') || rawUnit.includes('kilo') || rawUnit.includes('k')) tipo = 'KG';
+      else if (rawUnit.includes('sc') || rawUnit.includes('saco')) tipo = 'SC';
+      else tipo = 'UND';
+
+      return {
+        COD: String(p['Código'] || p['Cód.Barras'] || p['codigo'] || ''),
+        NOME: String(p['Descrição'] || p['descricao'] || ''),
+        PRECO: isNaN(precoNum) ? 0 : precoNum,
+        TIPO: tipo,
+        estoque: isNaN(estoqueNum) ? 0 : estoqueNum,
+      };
+    });
+
+    // Filter out products that are free or have no stock, as they are useless for combinations.
+    const products = productsRaw.filter((p: Product) => p.PRECO > 0 && p.estoque > 0);
+
+    const inventory = products.reduce((acc: { [key: string]: number }, p: Product) => {
+      acc[p.COD] = p.estoque;
+      return acc;
+    }, {});
 
     try {
-      const result = await buscarCombinacaoOtimizada(
-        df,
-        precoDesejado,
-        tolerancia,
-        maxProdutos,
-        new Set(usados),
-        blacklist,
-        isCancelled
-      );
-      if (!cancelled) {
-        self.postMessage({ type: 'result', result });
+      const produtosNaoBurlados = products.filter((p: Product) => {
+        const isBlacklisted = blacklist.some((term: string) => p.NOME.toLowerCase().includes(term.toLowerCase()) || p.COD.toLowerCase().includes(term.toLowerCase()));
+        return !isBlacklisted;
+      });
+
+      const result = findBestCombination(produtosNaoBurlados, precoDesejado, inventory, true);
+      
+      if (result) {
+        // Final validation to ensure stock constraints are respected
+        let isStockValid = true;
+        for (const cod in result.quantity) {
+          const requestedQty = result.quantity[cod];
+          const availableStock = inventory[cod];
+          if (requestedQty > availableStock) {
+            isStockValid = false;
+            console.warn(`Stock validation failed for product COD ${cod}. Requested: ${requestedQty}, Available: ${availableStock}`);
+            break;
+          }
+        }
+
+        if (isStockValid) {
+          const resultWithOriginalProducts = {
+            ...result,
+            products: result.products.map(p => {
+              const originalProduct = df.find((op: any) => op['Código'] === p.COD);
+              return {
+                ...originalProduct,
+                quantidadeUtilizada: result.quantity[p.COD]
+              };
+            })
+          };
+          self.postMessage({ type: 'result', result: resultWithOriginalProducts.products });
+        } else {
+          // If stock validation fails, return no result.
+          self.postMessage({ type: 'result', result: null });
+        }
+      } else {
+        self.postMessage({ type: 'result', result: null });
       }
     } catch (error) {
-      self.postMessage({ type: 'error', error: error instanceof Error ? error.message : String(error) });
-    } finally {
-      self.removeEventListener('message', cancelListener);
+      console.error('Error in combination worker:', error);
+      self.postMessage({ type: 'error', error: (error as Error).message });
     }
   }
 };

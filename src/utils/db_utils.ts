@@ -3,13 +3,16 @@ import * as cheerio from 'cheerio';
 
 // Função para carregar dados do HTML (produtos.html) a partir de string
 export function carregarDadosHtmlFromString(html: string): { df: any[] } {
+  console.log(`[carregarDadosHtmlFromString] Tamanho do HTML recebido: ${html.length} caracteres`);
+  
   const normalizeColName = (col: string): string => {
     const map: { [key: string]: string } = {
       'cód. barras': 'Cód.Barras',
       'cód.barras': 'Cód.Barras',
       'cod.barras': 'Cód.Barras',
-      'und': 'Und.Sai.',
+      'und': 'Und',  // Keep original name, don't convert
       'und.sai.': 'Und.Sai.',
+      'und.sai': 'Und.Sai.',
       'descrição': 'Descrição',
       'descricao': 'Descrição',
       'codigo': 'Código',
@@ -23,49 +26,120 @@ export function carregarDadosHtmlFromString(html: string): { df: any[] } {
       'preço venda': 'Preço Venda',
       'precovenda': 'Preço Venda',
       'csosn': 'CSOSN',
-      'st': 'CSOSN',
+      'st': 'ST',  // Keep original name, don't convert
       'elo': 'ELO',
     };
     return map[col.toLowerCase()] || col;
   };
 
-  const $ = cheerio.load(html);
-
-  const headerCells = $('table tr').first().find('td');
-  const colunas = headerCells.map((_, el) => $(el).text().trim()).get();
-  const numColunas = colunas.length;
-
-  if (numColunas === 0) {
-    return { df: [] };
+  // Pre-process HTML to remove junk before the table
+  let tableHtml = html;
+  const tableStartIndex = html.toLowerCase().indexOf('<table');
+  if (tableStartIndex > -1) {
+    tableHtml = html.substring(tableStartIndex);
   }
 
-  const dataRows = $('table tr').slice(1);
-  const df = dataRows.map((_, row) => {
-    const rowCells = $(row).find('td');
-    if (rowCells.length !== numColunas) return null;
+  console.log(`[carregarDadosHtmlFromString] Tamanho do HTML da tabela: ${tableHtml.length} caracteres`);
 
-    const rawObj: Record<string, string> = {};
-    colunas.forEach((col, idx) => {
-      const normalizedCol = normalizeColName(col);
-      rawObj[normalizedCol] = $(rowCells[idx]).text().trim();
-    });
+  // Attempt to parse as HTML table first
+  const $ = cheerio.load(tableHtml);
+  const headerCells = $('table tr').first().find('td');
+  let colunas = headerCells.map((_, el) => $(el).text().trim()).get();
+  let df: any[] = [];
 
-    const produto: any = {
-      'Código': rawObj['Código'] || '',
-      'Cód.Barras': rawObj['Cód.Barras'] || '',
-      'Descrição': rawObj['Descrição'] || '',
-      'Und.Sai.': rawObj['Und.Sai.'] || '',
-      'Fornecedor': rawObj['Fornecedor'] || '',
-      'Quantidade': rawObj['Quantidade'] || '0',
-      'Preço Custo': rawObj['Preço Custo'] || '0',
-      'Margem Lucro': rawObj['Margem Lucro'] || '0',
-      'Preço Venda': rawObj['Preço Venda'] || '0',
-      'CSOSN': rawObj['CSOSN'] || '',
-      'ELO': rawObj['ELO'] || '',
-    };
+  console.log(`[carregarDadosHtmlFromString] Colunas encontradas: ${colunas.length}`, colunas);
 
-    return produto;
-  }).get().filter(item => item !== null && item['Código']);
+  if (colunas.length > 0) {
+    // HTML Table parsing logic
+    const numColunas = colunas.length;
+    const dataRows = $('table tr').slice(1);
+    console.log(`[carregarDadosHtmlFromString] Total de linhas de dados encontradas: ${dataRows.length}`);
+    
+    df = dataRows.map((_, row) => {
+      const rowCells = $(row).find('td');
+      if (rowCells.length !== numColunas) return null;
+
+      const rawObj: Record<string, string> = {};
+      colunas.forEach((col, idx) => {
+        const normalizedCol = normalizeColName(col);
+        rawObj[normalizedCol] = $(rowCells[idx]).text().trim();
+      });
+
+      return {
+        'Código': rawObj['Código'] || '',
+        'Cód.Barras': rawObj['Cód.Barras'] || '',
+        'Descrição': rawObj['Descrição'] || '',
+        'Und': rawObj['Und'] || rawObj['Und.Sai.'] || '',  // Support both formats
+        'Fornecedor': rawObj['Fornecedor'] || '',
+        'Quantidade': rawObj['Quantidade'] || '0',
+        'Preço Custo': rawObj['Preço Custo'] || '0',
+        'Margem Lucro': rawObj['Margem Lucro'] || '0',
+        'Preço Venda': rawObj['Preço Venda'] || '0',
+        'ST': rawObj['ST'] || rawObj['CSOSN'] || '',  // Support both formats
+        'ELO': rawObj['ELO'] || '',
+      };
+    }).get().filter(item => item !== null && item['Código']);
+    
+    console.log(`[carregarDadosHtmlFromString] Produtos carregados após filtrar: ${df.length}`);
+  } else {
+    // Fallback to plain text parsing
+    console.log(`[carregarDadosHtmlFromString] HTML table parsing não funcionou, tentando fallback de texto puro`);
+    const lines = html.split('\n').map(line => line.trim()).filter(line => line);
+    console.log(`[carregarDadosHtmlFromString] Total de linhas após split: ${lines.length}`);
+    
+    let headerIndex = -1;
+    for (let i = 0; i < lines.length; i++) {
+        if (lines[i].toLowerCase().includes('código') && lines[i].toLowerCase().includes('descrição')) {
+            headerIndex = i;
+            break;
+        }
+    }
+
+    console.log(`[carregarDadosHtmlFromString] Header encontrado no índice: ${headerIndex}`);
+
+    if (headerIndex !== -1) {
+      const headerLine = lines[headerIndex];
+      colunas = headerLine.split(/\s{2,}|\t/);
+      const numColunas = colunas.length;
+      const dataLines = lines.slice(headerIndex + 1);
+      
+      console.log(`[carregarDadosHtmlFromString] Colunas do header: ${numColunas}`, colunas);
+      console.log(`[carregarDadosHtmlFromString] Linhas de dados para processar: ${dataLines.length}`);
+
+      df = dataLines.map(line => {
+        const values = line.split(/\s{2,}|\t/);
+        
+        // Strict check: allows for one missing column (e.g., ELO)
+        if (values.length < numColunas - 1 || values.length > numColunas) {
+            return null;
+        }
+        
+        const rawObj: Record<string, string> = {};
+        colunas.forEach((col, idx) => {
+            const normalizedCol = normalizeColName(col);
+            rawObj[normalizedCol] = values[idx] || '';
+        });
+
+        return {
+          'Código': rawObj['Código'] || '',
+          'Cód.Barras': rawObj['Cód.Barras'] || '',
+          'Descrição': rawObj['Descrição'] || '',
+          'Und': rawObj['Und'] || rawObj['Und.Sai.'] || '',  // Support both formats
+          'Fornecedor': rawObj['Fornecedor'] || '',
+          'Quantidade': rawObj['Quantidade'] || '0',
+          'Preço Custo': rawObj['Preço Custo'] || '0',
+          'Margem Lucro': rawObj['Margem Lucro'] || '0',
+          'Preço Venda': rawObj['Preço Venda'] || '0',
+          'ST': rawObj['ST'] || rawObj['CSOSN'] || '',  // Support both formats
+          'ELO': rawObj['ELO'] || '',
+        };
+      }).filter(item => item !== null && item['Código'] && item['Descrição']);
+      
+      console.log(`[carregarDadosHtmlFromString] Produtos finais após fallback: ${df.length}`);
+    } else {
+      console.error(`[carregarDadosHtmlFromString] Nenhum header encontrado no arquivo`);
+    }
+  }
 
   return { df };
 }
@@ -76,13 +150,27 @@ export function tratarDados(df: any[]): any[] {
     const novoRow = { ...row };
     for (const campo of camposNumericos) {
       if (novoRow[campo] && typeof novoRow[campo] === 'string') {
-        let str = novoRow[campo].trim();
-        // Remove pontos de milhar e substitui vírgula de decimal por ponto
-        str = str.replace(/\.|\s/g, '').replace(',', '.');
+        let str = novoRow[campo].trim().replace(/\s/g, ''); // remove spaces
+
+        if (str.includes(',')) {
+          // Comma present, so dots are thousands separators
+          str = str.replace(/\./g, '').replace(',', '.');
+        }
+        // If no comma, any dot is a decimal separator, so we don't touch it.
         
-        // Tenta converter para número
-        const num = parseFloat(str);
-        novoRow[campo] = isNaN(num) ? 0 : num;
+        let num = parseFloat(str);
+        
+        if (isNaN(num)) {
+          num = 0;
+        }
+
+        if (campo === 'Quantidade') {
+          // Round to 3 decimal places to avoid issues with "0,000..."
+          novoRow[campo] = Math.round(num * 1000) / 1000;
+        } else {
+          // Round prices to 2 decimal places
+          novoRow[campo] = Math.round(num * 100) / 100;
+        }
       }
     }
     return novoRow;
