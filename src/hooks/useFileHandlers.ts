@@ -33,9 +33,13 @@ export const useFileHandlers = ({
       const { df } = carregarDadosHtmlFromString(htmlContent);
       const dadosTratados = tratarDados(df);
 
+      console.log(`[handleLoadProducts] Carregados ${dadosTratados.length} produtos`);
+      console.log(`[handleLoadProducts] Primeiro produto:`, dadosTratados[0]);
+
       if (mode === 'replace') {
         setProdutos(dadosTratados);
-        showNotification("Estoque substituído com sucesso!");
+        console.log(`[handleLoadProducts] Produtos substituídos. Total: ${dadosTratados.length}`);
+        showNotification(`Estoque substituído com sucesso! (${dadosTratados.length} produtos)`);
       } else { // mode === 'add'
         setProdutos(prevProdutos => {
           const produtosMap = new Map(prevProdutos.map(p => [p.Código, p]));
@@ -43,15 +47,21 @@ export const useFileHandlers = ({
           dadosTratados.forEach(novoProduto => {
             const produtoExistente = produtosMap.get(novoProduto.Código);
             if (produtoExistente) {
-              // Atualiza a quantidade se o produto já existe
-              produtoExistente.Quantidade += novoProduto.Quantidade;
+              // Create a new object with the updated quantity to maintain immutability
+              const produtoAtualizado = {
+                ...produtoExistente,
+                Quantidade: produtoExistente.Quantidade + novoProduto.Quantidade,
+              };
+              produtosMap.set(novoProduto.Código, produtoAtualizado);
             } else {
               // Adiciona o novo produto se não existir
               produtosMap.set(novoProduto.Código, novoProduto);
             }
           });
 
-          return Array.from(produtosMap.values());
+          const resultado = Array.from(produtosMap.values());
+          console.log(`[handleLoadProducts] Produtos adicionados. Total: ${resultado.length}`);
+          return resultado;
         });
         showNotification("Produtos adicionados ao estoque com sucesso!");
       }

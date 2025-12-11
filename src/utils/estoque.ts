@@ -1,18 +1,21 @@
 // src/utils/estoque.ts
 
 // Define the product interface based on db_utils.ts and python script
+// Supports both old format (Und, ST) and new format (Und.Sai., CSOSN, ELO)
 export interface Produto {
   'Código': string;
   'Cód.Barras': string;
   'Descrição': string;
-  'Und.Sai.': string;
+  'Und.Sai.'?: string;
+  'Und'?: string;
   'Fornecedor': string;
   'Quantidade': number;
   'Preço Custo': number;
   'Margem Lucro': number;
   'Preço Venda': number;
-  'CSOSN': string;
-  'ELO': string;
+  'CSOSN'?: string;
+  'ST'?: string;
+  'ELO'?: string;
 }
 
 /**

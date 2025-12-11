@@ -21,7 +21,9 @@ const FileUpload: React.FC<Props> = ({ setLoading, onFileUpload, label, accept }
       setLoading(true);
       const file = e.target.files[0];
       try {
+        console.log(`[FileUpload] Arquivo selecionado: ${file.name}, Tamanho: ${file.size} bytes`);
         const content = await file.text();
+        console.log(`[FileUpload] Arquivo lido com sucesso. Tamanho do conteúdo: ${content.length} caracteres`);
         setFileContent(content);
         setShowModal(true);
       } catch (err) {

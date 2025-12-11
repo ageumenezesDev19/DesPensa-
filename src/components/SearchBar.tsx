@@ -135,7 +135,7 @@ const SearchBar: React.FC<Props> = ({ produtos, onRetirar, onRetirarCombinacao, 
           <ul>
             {result.combinacao.map((p: any, i: number) => (
               <li key={i}>
-                {p.Descrição} (<b>x{p['Und.Sai.'] === 'KG' ? p.quantidadeUtilizada.toFixed(3) : p.quantidadeUtilizada}</b>) 
+                {p.Descrição} (<b>x{(p['Und.Sai.'] === 'KG' || p['Und.Sai.'] === 'SC') ? p.quantidadeUtilizada.toFixed(3) : p.quantidadeUtilizada}</b>) 
                 - R$ {Number(p["Preço Venda"]).toFixed(2)} ({p['Und.Sai.']})
                 <span className="total-item-price"> / Total: R$ {(Number(p["Preço Venda"]) * p.quantidadeUtilizada).toFixed(2)}</span>
                 <span className="stock-info"> (Estoque: {p.Quantidade})</span>

@@ -50,7 +50,6 @@ export const useSearch = ({ produtos, blacklist, preco, searchMode, showNotifica
     }
 
     setPreviouslyFound(newPreviouslyFound);
-    setSearchResult(null);
     handleSearch(true, newPreviouslyFound);
   };
 
@@ -74,7 +73,10 @@ export const useSearch = ({ produtos, blacklist, preco, searchMode, showNotifica
       let produtoEncontrado: Produto | undefined;
       if (searchMode === 'produto_nome') {
         const searchTerm = preco.toLowerCase();
-        produtoEncontrado = produtos.find(p => p.Descrição.toLowerCase().includes(searchTerm) && !blacklist.includes(p.Código));
+                produtoEncontrado = produtos.find(p => {
+          const isBlacklisted = blacklist.some((term: string) => p.Descrição.toLowerCase().includes(term.toLowerCase()) || p.Código.toLowerCase().includes(term.toLowerCase()));
+          return p.Descrição.toLowerCase().includes(searchTerm) && !isBlacklisted;
+        });
       } else { // produto_preco
         const precoDesejado = Number(preco.replace(',', '.'));
         produtoEncontrado = buscarProdutoProximo(produtos, precoDesejado, blacklist);
@@ -98,7 +100,34 @@ export const useSearch = ({ produtos, blacklist, preco, searchMode, showNotifica
       }
 
       const currentPreviouslyFound = previouslyFoundSet || previouslyFound;
-      const produtosFiltrados = produtos.filter(p => !currentPreviouslyFound.has(p.Código));
+
+      // Fast path: try exact-price match (in cents) before starting worker
+      const precoCents = Math.round(precoDesejado * 100);
+      const exactMatch = produtos.find(p => {
+        try {
+          return !currentPreviouslyFound.has(p.Código) && p.Quantidade >= 0.001 && Math.round((p['Preço Venda'] ?? 0) * 100) === precoCents && !blacklist.some(term => p.Descrição.toLowerCase().includes(term.toLowerCase()));
+        } catch (_) { return false; }
+      });
+      if (exactMatch) {
+        setSearchResult({ status: 'ok', produto: exactMatch });
+        setSearching(false);
+        return;
+      }
+
+      // Heuristic candidate filtering to keep worker input small and fast:
+      // - exclude previously found and blacklisted
+      // - require in-stock
+      // - keep products with unit price <= target price
+      // - sort by price desc and limit to top N candidates
+      const MAX_CANDIDATES = 300;
+      const produtosCandidatos = produtos
+        .filter(p => !currentPreviouslyFound.has(p.Código) && p.Quantidade >= 0.001)
+        .filter(p => !blacklist.some(term => p.Descrição.toLowerCase().includes(term.toLowerCase()) || p.Código.toLowerCase().includes(term.toLowerCase())))
+        .filter(p => (p['Preço Venda'] ?? 0) > 0 && (p['Preço Venda'] ?? 0) <= precoDesejado)
+        .sort((a, b) => (b['Preço Venda'] ?? 0) - (a['Preço Venda'] ?? 0))
+        .slice(0, MAX_CANDIDATES);
+
+      const produtosFiltrados = produtosCandidatos;
 
       const worker = new Worker(new URL('../workers/combinationWorker.ts', import.meta.url), { type: 'module' });
       let workerResult: ProdutoComQuantidade[] | null = null;
@@ -145,7 +174,12 @@ export const useSearch = ({ produtos, blacklist, preco, searchMode, showNotifica
       }
 
       if (workerResult && workerResult.length > 0) {
-        setSearchResult({ status: 'ok', combinacao: workerResult });
+        const finalResult = workerResult.filter(p => p.quantidadeUtilizada >= 0.001);
+        if (finalResult.length > 0) {
+          setSearchResult({ status: 'ok', combinacao: finalResult });
+        } else {
+          setSearchResult({ status: 'not_found' });
+        }
       } else {
         setSearchResult({ status: 'not_found' });
       }
