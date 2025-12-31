@@ -130,40 +130,62 @@ const findBestCombination = (
     let remainingCents = targetCents - initialCents;
 
     if (remainingCents > 0) {
-      // Create copies to modify
-      const newQuantity: { [key: string]: number } = { ...initialQuantity };
-      const newProducts = [...initialProducts];
+      // Helper to floor quantities to 0.001 precision and respect stock
+      const floorToThousandth = (v: number) => Math.floor(v * 1000) / 1000;
 
-      for (const fractionalProduct of fractionalProducts) {
-        if (remainingCents <= 0) break;
+      // Try greedy filling with given fractional product order
+      const tryFill = (fractionalList: Product[], baseProducts: Product[], baseQuantity: { [key: string]: number }) => {
+        let rem = remainingCents;
+        const q: { [key: string]: number } = { ...baseQuantity };
+        const prods: Product[] = [...baseProducts];
 
-        const availableStock = inventory[fractionalProduct.COD] ?? fractionalProduct.estoque;
-        const productPriceCents = productsInCents.get(fractionalProduct.COD) || 0;
+        for (const fractionalProduct of fractionalList) {
+          if (rem <= 0) break;
+          const availableStock = inventory[fractionalProduct.COD] ?? fractionalProduct.estoque;
+          const productPriceCents = productsInCents.get(fractionalProduct.COD) || 0;
+          if (availableStock <= 0 || productPriceCents <= 0) continue;
 
-        if (availableStock > 0 && productPriceCents > 0) {
-          const neededQty = remainingCents / productPriceCents;
-          const qtyToTake = Math.min(neededQty, availableStock);
+          const neededQty = rem / productPriceCents;
+          let qtyToTake = Math.min(neededQty, availableStock);
+          qtyToTake = floorToThousandth(qtyToTake);
 
-          if (qtyToTake > 0) {
-            const existingQty = newQuantity[fractionalProduct.COD] || 0;
-            if (existingQty === 0) {
-              newProducts.push(fractionalProduct);
-            }
-            newQuantity[fractionalProduct.COD] = existingQty + qtyToTake;
-            remainingCents -= Math.round(qtyToTake * productPriceCents);
+          if (qtyToTake >= 0.001) {
+            const existing = q[fractionalProduct.COD] || 0;
+            if (existing === 0) prods.push(fractionalProduct);
+            q[fractionalProduct.COD] = existing + qtyToTake;
+            rem -= Math.round(qtyToTake * productPriceCents);
           }
         }
-      }
-      
-      const finalTotalCents = calculateTotalInCents(newProducts, newQuantity, productsInCents);
-      const finalDiff = Math.abs(finalTotalCents - targetCents);
 
-      if (finalDiff < minDiff) {
-        minDiff = finalDiff;
+        const finalCents = calculateTotalInCents(prods, q, productsInCents);
+        return { prods, q, finalCents, diff: Math.abs(finalCents - targetCents) };
+      };
+
+      // Two orders: descending (expensive first) and ascending (cheap first)
+      const descList = fractionalProducts.slice();
+      const ascList = fractionalProducts.slice().reverse();
+
+      // Try filling starting from the best unit-only combination (if any)
+      const baseProductsA = [...initialProducts];
+      const baseQuantityA = { ...initialQuantity };
+      const resultDescFromUnits = tryFill(descList, baseProductsA, baseQuantityA);
+      const resultAscFromUnits = tryFill(ascList, baseProductsA, baseQuantityA);
+
+      // Also try pure-fractional solutions (no unit base)
+      const resultDescPure = tryFill(descList, [], {});
+      const resultAscPure = tryFill(ascList, [], {});
+
+      // Pick the best among the four attempts
+      const candidates = [resultDescFromUnits, resultAscFromUnits, resultDescPure, resultAscPure];
+      candidates.sort((a, b) => a.diff - b.diff);
+      const best = candidates[0];
+
+      if (best && best.diff < minDiff) {
+        minDiff = best.diff;
         bestCombination = {
-          products: newProducts,
-          total: finalTotalCents / 100,
-          quantity: newQuantity,
+          products: best.prods,
+          total: best.finalCents / 100,
+          quantity: best.q,
         };
       }
     }
