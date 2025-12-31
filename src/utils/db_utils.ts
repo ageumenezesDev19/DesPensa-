@@ -65,11 +65,13 @@ export function carregarDadosHtmlFromString(html: string): { df: any[] } {
         rawObj[normalizedCol] = $(rowCells[idx]).text().trim();
       });
 
+      const unidadeVal = rawObj['Und'] || rawObj['Und.Sai.'] || '';
       return {
         'Código': rawObj['Código'] || '',
         'Cód.Barras': rawObj['Cód.Barras'] || '',
         'Descrição': rawObj['Descrição'] || '',
-        'Und': rawObj['Und'] || rawObj['Und.Sai.'] || '',  // Support both formats
+        'Und': unidadeVal,
+        'Und.Sai.': unidadeVal,
         'Fornecedor': rawObj['Fornecedor'] || '',
         'Quantidade': rawObj['Quantidade'] || '0',
         'Preço Custo': rawObj['Preço Custo'] || '0',
@@ -120,11 +122,13 @@ export function carregarDadosHtmlFromString(html: string): { df: any[] } {
             rawObj[normalizedCol] = values[idx] || '';
         });
 
+        const unidadeVal = rawObj['Und'] || rawObj['Und.Sai.'] || '';
         return {
           'Código': rawObj['Código'] || '',
           'Cód.Barras': rawObj['Cód.Barras'] || '',
           'Descrição': rawObj['Descrição'] || '',
-          'Und': rawObj['Und'] || rawObj['Und.Sai.'] || '',  // Support both formats
+          'Und': unidadeVal,
+          'Und.Sai.': unidadeVal,
           'Fornecedor': rawObj['Fornecedor'] || '',
           'Quantidade': rawObj['Quantidade'] || '0',
           'Preço Custo': rawObj['Preço Custo'] || '0',
