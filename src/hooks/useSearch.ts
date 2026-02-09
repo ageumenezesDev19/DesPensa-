@@ -141,7 +141,7 @@ export const useSearch = ({ produtos, blacklist, preco, searchMode, showNotifica
           payload: {
             df: produtosFiltrados,
             precoDesejado,
-            tolerancia: 0.4,
+            tolerancia: 0.3,
             usados: Array.from(currentPreviouslyFound),
             blacklist,
           },
