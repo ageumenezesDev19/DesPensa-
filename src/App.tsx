@@ -9,15 +9,6 @@ import { ClearDataModal } from "./components/ClearDataModal";
 import Loader from "./components/Loader";
 import { useEstoqueContext } from "./context/EstoqueContext";
 
-// Better approach: Re-export from context or types.
-// But checking the codebase, `ProdutosView` imported it from `../App`.
-// We should update `ProdutosView` to import from context or a shared types file.
-// For now, let's just leave a re-export or similar if needed.
-// Actually, I'll remove it from here and update the imports in other files.
-// But wait, `App.tsx` does not need to export it anymore if it's not using it.
-// Let's check who imports it. `ProdutosView` does.
-// I will fix `ProdutosView` imports in the next step.
-
 const App: React.FC = () => {
   const {
     loading,
