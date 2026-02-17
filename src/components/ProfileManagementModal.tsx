@@ -91,48 +91,78 @@ export const ProfileManagementModal: React.FC<Props> = ({ onClose }) => {
 
   return (
     <>
-      <div className="modal-overlay">
+      <div className="modal-overlay animated-fadein">
         <div className="modal-content profile-management-modal">
-          <h2>Gerenciar Perfis</h2>
-          
-          <div className="profile-list">
-            {profiles.map(profile => (
-              <div key={profile} className={`profile-item ${profile === activeProfile ? 'active' : ''}`}>
-                {editingProfile === profile ? (
-                  <div className="profile-editor">
-                    <input 
-                      type="text" 
-                      value={editingProfileName}
-                      onChange={(e) => setEditingProfileName(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && handleEdit()}
-                      autoFocus
-                    />
-                    <button className="action-btn save" onClick={handleEdit}>Salvar</button>
-                    <button className="action-btn cancel" onClick={() => setEditingProfile(null)}>Cancelar</button>
-                  </div>
-                ) : (
-                  <>
-                    <span className="profile-name">
-                      {profile}
-                      {profile === activeProfile && ' (Ativo)'}
-                    </span>
-                    <div className="profile-actions">
-                      <button className="action-btn edit" onClick={() => setEditingProfile(profile)}>Editar</button>
-                      <button className="action-btn backup" onClick={() => handleBackup(profile)}>Backup</button>
-                      <button className="action-btn delete" onClick={() => handleDeleteClick(profile)}>Excluir</button>
-                    </div>
-                  </>
-                )}
-              </div>
-            ))}
+          <div className="modal-header">
+            <h2>Gerenciar Perfis</h2>
+            <button className="close-btn" onClick={onClose} title="Fechar">×</button>
           </div>
+          
+          <div className="modal-body">
+            <div className="section profiles-section">
+              <h3 className="section-title">Seus Perfis</h3>
+              <div className="profile-list">
+                {profiles.map(profile => (
+                  <div key={profile} className={`profile-item ${profile === activeProfile ? 'active' : ''}`}>
+                    {editingProfile === profile ? (
+                      <div className="profile-editor">
+                        <input 
+                          type="text" 
+                          value={editingProfileName}
+                          onChange={(e) => setEditingProfileName(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleEdit()}
+                          autoFocus
+                          placeholder="Nome do perfil"
+                        />
+                        <div className="editor-actions">
+                          <button className="icon-btn save" onClick={handleEdit} title="Salvar">✓</button>
+                          <button className="icon-btn cancel" onClick={() => setEditingProfile(null)} title="Cancelar">✕</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="profile-info">
+                          <span className="profile-name">
+                            {profile}
+                          </span>
+                          {profile === activeProfile && <span className="badge active-badge">Ativo</span>}
+                        </div>
+                        
+                        <div className="profile-actions">
+                          <button 
+                            className="icon-btn edit" 
+                            onClick={() => setEditingProfile(profile)} 
+                            title="Renomear perfil"
+                          >
+                            ✎
+                          </button>
+                          <button 
+                            className="icon-btn backup" 
+                            onClick={() => handleBackup(profile)} 
+                            title="Fazer backup deste perfil"
+                          >
+                            ⬇
+                          </button>
+                          <button 
+                            className="icon-btn delete" 
+                            onClick={() => handleDeleteClick(profile)}
+                            disabled={profile === 'Default' || profile === activeProfile}
+                            title={profile === 'Default' || profile === activeProfile ? "Não é possível excluir este perfil" : "Excluir perfil"}
+                          >
+                            🗑
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
 
-          <div className="modal-separator"></div>
-
-          <div className="create-profile-section">
-            <h3>Ações Globais</h3>
-            <div className="global-actions">
-              <div className="profile-creator">
+            <div className="section global-actions-section">
+              <h3 className="section-title">Ações</h3>
+              
+              <div className="action-row create-row">
                 <input
                   type="text"
                   value={newProfileName}
@@ -140,11 +170,19 @@ export const ProfileManagementModal: React.FC<Props> = ({ onClose }) => {
                   onKeyPress={(e) => e.key === 'Enter' && handleCreate()}
                   placeholder="Nome do novo perfil"
                 />
-                <button onClick={handleCreate}>Criar Perfil</button>
+                <button className="primary-btn" onClick={handleCreate} disabled={!newProfileName.trim()}>
+                  Criar Novo
+                </button>
               </div>
-              <button className="action-btn restore-global" onClick={handleRestoreClick}>
-                Restaurar de um Backup...
-              </button>
+
+              <div className="divider-text">ou</div>
+
+              <div className="action-row restore-row">
+                 <button className="secondary-btn restore-btn" onClick={handleRestoreClick}>
+                  <span className="icon">⬆</span> Restaurar Backup
+                </button>
+                <p className="help-text">Restaure um arquivo .json salvo anteriormente.</p>
+              </div>
             </div>
           </div>
 
@@ -155,10 +193,6 @@ export const ProfileManagementModal: React.FC<Props> = ({ onClose }) => {
             style={{ display: 'none' }}
             onChange={handleFileRestore}
           />
-
-          <div className="modal-buttons">
-            <button className="cancel-btn" onClick={onClose}>Fechar</button>
-          </div>
         </div>
       </div>
 

@@ -1,132 +1,264 @@
 .profile-management-modal {
-  h2 {
-    margin-bottom: 1.5rem;
+  padding: 0 !important; // Override default modal padding if set
+  max-width: 500px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
+  border-radius: 12px;
+  overflow: hidden; // For header border radius
+
+  .modal-header {
+    background-color: #f8f9fa;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    h2 {
+      margin: 0;
+      font-size: 1.25rem;
+      color: #343a40;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: #adb5bd;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+      transition: color 0.2s;
+
+      &:hover {
+        color: #495057;
+      }
+    }
+  }
+
+  .modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+  }
+
+  .section {
+    margin-bottom: 2rem;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .section-title {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    color: #6c757d;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin: 0 0 0.75rem 0;
   }
 
   .profile-list {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
-    max-height: 300px;
-    overflow-y: auto;
-    padding-right: 8px; // for scrollbar space
-  }
-
-  .cancel-btn {
-    margin-top: 2rem;
+    gap: 0.5rem;
   }
 
   .profile-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px;
-    border-radius: 6px;
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    background-color: #fff;
+    border: 1px solid #e9ecef;
+    transition: all 0.2s;
 
     &.active {
       border-color: #007bff;
-      background-color: #e7f1ff;
+      background-color: #f0f7ff;
     }
 
-    .profile-name {
-      font-weight: 500;
+    &:hover:not(.active) {
+      background-color: #f8f9fa;
+      border-color: #dee2e6;
     }
 
-    .profile-actions {
+    .profile-info {
       display: flex;
-      gap: 8px;
+      align-items: center;
+      gap: 0.5rem;
 
-      .action-btn {
-        padding: 4px 8px;
-        font-size: 0.8rem;
-        border: none;
+      .profile-name {
+        font-weight: 500;
+        color: #212529;
+      }
+
+      .badge {
+        font-size: 0.7rem;
+        padding: 2px 6px;
         border-radius: 4px;
+        background-color: #007bff;
         color: white;
-        cursor: pointer;
+        font-weight: 600;
+      }
+    }
 
-        &.edit {
-          background-color: #6c757d;
-          &:hover { background-color: #5a6268; }
-        }
-        &.save {
-          background-color: #28a745;
-          &:hover { background-color: #218838; }
-        }
-        &.cancel {
-          background-color: #6c757d;
-          &:hover { background-color: #5a6268; }
-        }
-        &.backup {
-          background-color: #17a2b8;
-          &:hover { background-color: #138496; }
-        }
-        &.delete {
-          background-color: #dc3545;
-          &:hover { background-color: #c82333; }
-        }
+    .profile-actions, .editor-actions {
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .icon-btn {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: #6c757d;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.2s;
+
+      &:hover:not(:disabled) {
+        background-color: #e9ecef;
+        color: #495057;
+      }
+
+      &.edit:hover { background-color: #e2e6ea; color: #007bff; }
+      &.backup:hover { background-color: #e2e6ea; color: #17a2b8; }
+      &.delete:hover { background-color: #ffe6e6; color: #dc3545; }
+      &.save { color: #28a745; background-color: #e6ffed; }
+      &.save:hover { background-color: #d4edda; }
+      &.cancel:hover { background-color: #ffe6e6; color: #dc3545; }
+
+      &:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
       }
     }
 
     .profile-editor {
       display: flex;
       width: 100%;
-      gap: 8px;
+      gap: 0.5rem;
+      align-items: center;
+
       input {
         flex-grow: 1;
         padding: 4px 8px;
-        border: 1px solid #007bff;
+        border: 1px solid #ced4da;
         border-radius: 4px;
+        font-size: 0.95rem;
+
+        &:focus {
+          outline: none;
+          border-color: #007bff;
+          box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+        }
       }
     }
   }
 
-  .modal-separator {
-    height: 1px;
-    background-color: #e0e0e0;
-    margin: 1.5rem 0;
-  }
-
-  .create-profile-section {
-    h3 {
-      margin-top: 0;
-      margin-bottom: 1rem;
-      font-size: 1.2rem;
-    }
-    .global-actions {
+  .global-actions-section {
+    .action-row {
       display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-    .profile-creator {
-      display: flex;
-      gap: 8px;
+      gap: 0.5rem;
+      
+      &.create-row {
+        input {
+          flex-grow: 1;
+          padding: 8px 12px;
+          border: 1px solid #ced4da;
+          border-radius: 6px;
+          font-size: 0.95rem;
 
-      input {
-        flex-grow: 1;
-        padding: 8px 12px;
-        border-radius: 6px;
-        border: 1px solid #ccc;
+          &:focus {
+            outline: none;
+            border-color: #007bff;
+             box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+          }
+        }
       }
-      button {
-        padding: 8px 16px;
-        border: none;
-        border-radius: 6px;
-        background-color: #28a745;
-        color: white;
-        cursor: pointer;
+
+      &.restore-row {
+        flex-direction: column;
+        align-items: stretch;
       }
     }
-    .action-btn.restore-global {
-      padding: 10px 16px;
-      font-size: 1rem;
+
+    .divider-text {
+      text-align: center;
+      color: #adb5bd;
+      font-size: 0.85rem;
+      margin: 1rem 0;
+      position: relative;
+      
+      &::before, &::after {
+        content: "";
+        display: block;
+        height: 1px;
+        background-color: #e9ecef;
+        position: absolute;
+        top: 50%;
+        width: 45%;
+      }
+      &::before { left: 0; }
+      &::after { right: 0; }
+    }
+
+    .primary-btn {
+      padding: 8px 16px;
+      background-color: #007bff;
+      color: white;
       border: none;
       border-radius: 6px;
-      background-color: #ffc107;
-      color: #212529;
+      font-weight: 600;
       cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+
+      &:hover:not(:disabled) {
+        background-color: #0056b3;
+      }
+
+      &:disabled {
+        background-color: #a0c4ff;
+        cursor: not-allowed;
+      }
+    }
+
+    .secondary-btn {
+      padding: 10px;
+      background-color: #f8f9fa;
+      border: 1px solid #ced4da;
+      color: #495057;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+
+      .icon { font-size: 1.1em; }
+
+      &:hover {
+        background-color: #e2e6ea;
+        border-color: #adb5bd;
+      }
+    }
+
+    .help-text {
+      font-size: 0.8rem;
+      color: #6c757d;
+      margin: 0.25rem 0 0;
       text-align: center;
     }
   }

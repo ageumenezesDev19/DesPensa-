@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 const PROFILES_KEY = 'user_profiles';
 const ACTIVE_PROFILE_KEY = 'active_user_profile';
 const DEFAULT_PROFILE = 'Default';
-const PROFILE_DATA_KEYS = ['estoque', 'retirados', 'blacklist'];
+const PROFILE_DATA_KEYS = ['produtos', 'retirados', 'blacklist'];
 
 // Helper to trigger file download
 const downloadFile = (filename: string, content: string) => {
@@ -115,9 +115,42 @@ export function useProfiles() {
     try {
       let totalItems = 0;
       const backupData: { [key: string]: any } = {};
+      
       PROFILE_DATA_KEYS.forEach(key => {
-        const item = window.localStorage.getItem(getProfiledKey(profileNameToBackup, key));
-        const data = item ? JSON.parse(item) : [];
+        const storageKey = getProfiledKey(profileNameToBackup, key);
+        
+        // Check for chunked data first (handling large datasets)
+        const partsMeta = window.localStorage.getItem(`${storageKey}_parts`);
+        let data: any = null;
+
+        if (partsMeta) {
+          try {
+            const partsCount = Number(partsMeta);
+            const items: any[] = [];
+            for (let i = 0; i < partsCount; i++) {
+              const part = window.localStorage.getItem(`${storageKey}_part_${i}`);
+              if (part) {
+                const parsedPart = JSON.parse(part);
+                if (Array.isArray(parsedPart)) {
+                  items.push(...parsedPart);
+                } else {
+                  items.push(parsedPart);
+                }
+              }
+            }
+            data = items;
+            console.log(`[Backup] Reconstructed ${key} from ${partsCount} chunks. Total items: ${items.length}`);
+          } catch (e) {
+            console.warn(`[Backup] Failed to reconstruct chunks for ${key}`, e);
+          }
+        }
+
+        // Fallback to single key if no chunks or reconstruction failed
+        if (!data) {
+          const item = window.localStorage.getItem(storageKey);
+          data = item ? JSON.parse(item) : [];
+        }
+
         backupData[key] = data;
         if (Array.isArray(data)) {
           totalItems += data.length;
