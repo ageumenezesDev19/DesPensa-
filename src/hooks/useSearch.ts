@@ -15,7 +15,7 @@ interface SearchProps {
 }
 
 export const useSearch = ({ produtos, blacklist, preco, searchMode, showNotification }: SearchProps) => {
-  const [searchResult, setSearchResult] = useState<{ status: string; produto?: Produto; combinacao?: ProdutoComQuantidade[] } | null>(null);
+  const [searchResult, setSearchResult] = useState<{ status: string; produtos?: Produto[]; combinacao?: ProdutoComQuantidade[] } | null>(null);
   const [searching, setSearching] = useState(false);
   const [searchCancelled, setSearchCancelled] = useState(false);
   const [showCancel, setShowCancel] = useState(false);
@@ -45,8 +45,8 @@ export const useSearch = ({ produtos, blacklist, preco, searchMode, showNotifica
 
     if (searchResult.combinacao) {
       searchResult.combinacao.forEach((p: Produto) => newPreviouslyFound.add(p.Código));
-    } else if (searchResult.produto) {
-      newPreviouslyFound.add(searchResult.produto.Código);
+    } else if (searchResult.produtos) {
+      searchResult.produtos.forEach((p: Produto) => newPreviouslyFound.add(p.Código));
     }
 
     setPreviouslyFound(newPreviouslyFound);
@@ -70,24 +70,28 @@ export const useSearch = ({ produtos, blacklist, preco, searchMode, showNotifica
     }
 
     if (searchMode === 'produto_nome' || searchMode === 'produto_preco') {
-      let produtoEncontrado: Produto | undefined;
+      let produtosEncontrados: Produto[] = [];
+
       if (searchMode === 'produto_nome') {
         const searchTerm = preco.toLowerCase();
-                produtoEncontrado = produtos.find(p => {
+        produtosEncontrados = produtos.filter(p => {
           const isBlacklisted = blacklist.some((term: string) => p.Descrição.toLowerCase().includes(term.toLowerCase()) || p.Código.toLowerCase().includes(term.toLowerCase()));
           return p.Descrição.toLowerCase().includes(searchTerm) && !isBlacklisted;
-        });
+        }).slice(0, 20); // Limit to 20 results
       } else { // produto_preco
         const precoDesejado = Number(preco.replace(',', '.'));
-        produtoEncontrado = buscarProdutoProximo(produtos, precoDesejado, blacklist);
+        const produtoEncontrado = buscarProdutoProximo(produtos, precoDesejado, blacklist);
+        if (produtoEncontrado) {
+          produtosEncontrados = [produtoEncontrado];
+        }
       }
 
       if (searchCancelled) {
         setSearching(false);
         return;
       }
-      if (produtoEncontrado) {
-        setSearchResult({ status: 'ok', produto: produtoEncontrado });
+      if (produtosEncontrados.length > 0) {
+        setSearchResult({ status: 'ok', produtos: produtosEncontrados });
       } else {
         setSearchResult({ status: 'not_found' });
       }

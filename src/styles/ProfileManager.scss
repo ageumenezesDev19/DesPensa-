@@ -1,57 +1,88 @@
 .profile-manager {
   background-color: #fff;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08); // Consistent shadow
+  border: 1px solid #eef0f2;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
-}
+  gap: 1.5rem;
+  transition: transform 0.2s, box-shadow 0.2s;
 
-.profile-selector {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
-  label {
-    font-size: 1rem;
-    font-weight: 500;
-    color: #333;
+  &:hover {
+    box-shadow: 0 6px 16px rgba(0,0,0,0.1);
   }
 
-  select {
-    padding: 8px 12px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    background-color: #fff;
-    font-size: 1rem;
-    min-width: 180px;
-    cursor: pointer;
+  .profile-info {
+    h3 {
+      margin: 0;
+      font-size: 1.25rem;
+      color: #2c3e50;
+    }
+    .subtitle {
+      margin: 0.25rem 0 0;
+      color: #7f8c8d;
+      font-size: 0.9rem;
+    }
+  }
 
-    &:hover {
-      border-color: #888;
+  .profile-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    .select-wrapper {
+        min-width: 200px;
+    }
+
+    .manage-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      background-color: #f8f9fa;
+      color: #495057;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+
+      .icon {
+        font-size: 1.1rem;
+      }
+
+      &:hover {
+        background-color: #e9ecef;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
     }
   }
 }
 
-.profile-actions {
-  button {
-    padding: 8px 16px;
-    border-radius: 6px;
-    border: 1px solid #007bff;
-    background-color: #fff;
-    color: #007bff;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-
-    &:hover {
-      background-color: #007bff;
-      color: #fff;
+// Media query for responsiveness
+@media (max-width: 600px) {
+  .profile-manager {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1.25rem;
+    
+    .profile-controls {
+      flex-direction: column;
+      .select-wrapper, .manage-btn {
+        width: 100%;
+        justify-content: center;
+      }
     }
   }
 }

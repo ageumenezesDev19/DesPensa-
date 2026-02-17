@@ -71,8 +71,8 @@ const SearchBar: React.FC = () => {
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       if (result && result.status === 'ok') {
-        if ((searchMode === 'produto_preco' || searchMode === 'produto_nome') && result.produto) {
-          handleRetirarClick(result.produto);
+        if ((searchMode === 'produto_preco' || searchMode === 'produto_nome') && result.produtos && result.produtos.length > 0) {
+          handleRetirarClick(result.produtos[0]);
         } else if (searchMode === 'combinacao' && result.combinacao) {
           handleRetirarCombinacaoClick(result.combinacao);
         }
@@ -116,7 +116,7 @@ const SearchBar: React.FC = () => {
           disabled={!!searching}
         >
           <option value="combinacao">Buscar Combinação</option>
-          <option value="produto_preco">Buscar Produto por Preço</option>
+          <option value="produto_preco">Buscar Unidade por Preço</option>
           <option value="produto_nome">Buscar Produto por Nome</option>
         </select>
         <button onClick={() => handleSearch(false)} disabled={produtos.length === 0 || !preco || !!searching}>
@@ -137,58 +137,114 @@ const SearchBar: React.FC = () => {
 
       {produtos.length === 0 && <p>Por favor, importe o arquivo `produtos.html` para começar.</p>}
 
-      {!searching && result && result.status === "ok" && (searchMode === 'produto_preco' || searchMode === 'produto_nome') && result.produto && (
-        <div className="search-result">
-          <p>
-            <b>{result.produto.Descrição}</b> - R$ {Number(result.produto["Preço Venda"]).toFixed(2)} (Estoque: {result.produto.Quantidade})
-          </p>
-          <div className="comb-actions single-product-actions">
-            <button onClick={() => handleRetirarClick(result.produto!)}>
-              Retirar 1 unidade
-            </button>
-            <AnimatedButton onClick={handleRecalculate} title="Buscar outro produto" className="recalculate-btn">
+      {!searching && result && result.status === "ok" && (searchMode === 'produto_preco' || searchMode === 'produto_nome') && result.produtos && result.produtos.length > 0 && (
+        <div className="search-result-card animated-slideUp">
+          <div className="result-header">
+            <h4>{result.produtos.length > 1 ? `${result.produtos.length} Produtos Encontrados` : "Produto Encontrado"}</h4>
+          </div>
+          
+          <ul className="result-list">
+            {result.produtos.map((p: any, i: number) => (
+              <li key={p.Código || i} className="result-item">
+                <div className="item-info">
+                  <span className="item-name">
+                    {p.Descrição}
+                  </span>
+                  <div className="item-details">
+                    <span className="item-price">
+                      Preço: <b>R$ {Number(p["Preço Venda"]).toFixed(2)}</b>
+                    </span>
+                    <span className="item-stock">
+                      Estoque: {p.Quantidade} {p.Und}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="item-actions">
+                  <button 
+                    className="primary-btn small-btn" 
+                    onClick={() => handleRetirarClick(p)}
+                    title="Retirar 1 unidade do estoque"
+                    style={{ marginRight: '8px' }}
+                  >
+                    Retirar 1
+                  </button>
+                   <button
+                    className={`icon-action-btn copy-btn ${copiedIndex === i ? 'copied' : ''}`}
+                    onClick={() => handleCopy(p, i)}
+                    title="Copiar nome do produto"
+                  >
+                    {copiedIndex === i ? (
+                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    ) : (
+                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    )}
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <div className="result-actions">
+            <AnimatedButton onClick={handleRecalculate} title="Buscar novamente" className="secondary-btn">
               Recalcular
             </AnimatedButton>
           </div>
         </div>
       )}
       {!searching && result && result.status === "ok" && searchMode === "combinacao" && result.combinacao && (
-        <div className="search-result">
-          <h4>Combinação encontrada:</h4>
-          <ul>
+        <div className="search-result-card">
+          <div className="result-header">
+            <h4>Combinação Encontrada</h4>
+            <span className="total-price">
+              Total: <strong>R$ {result.combinacao.reduce((acc: number, p: any) => acc + p["Preço Venda"] * p.quantidadeUtilizada, 0).toFixed(2)}</strong>
+            </span>
+          </div>
+          
+          <ul className="result-list">
             {result.combinacao.map((p: any, i: number) => (
-              <li key={i}>
-                <span className="product-name">
-                  <span>{p.Descrição}</span>
-                  <button
-                    className="copy-btn"
+              <li key={i} className="result-item">
+                <div className="item-info">
+                  <span className="item-name">
+                    {p.Descrição}
+                  </span>
+                  <div className="item-details">
+                    <span className="item-quantity">
+                      {(p['Und.Sai.'] === 'KG' || p['Und.Sai.'] === 'SC') ? p.quantidadeUtilizada.toFixed(3) : p.quantidadeUtilizada} {p['Und.Sai.']}
+                    </span>
+                    <span className="item-price">
+                      R$ {Number(p["Preço Venda"]).toFixed(2)}
+                    </span>
+                    <span className="item-total">
+                      Subtotal: <b>R$ {(Number(p["Preço Venda"]) * p.quantidadeUtilizada).toFixed(2)}</b>
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="item-actions">
+                   <button
+                    className={`icon-action-btn copy-btn ${copiedIndex === i ? 'copied' : ''}`}
                     onClick={() => handleCopy(p, i)}
                     title="Copiar nome do produto"
-                    tabIndex={0}>
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M16 4H18C18.5304 4 19.0391 4.21071 19.4142 4.58579C19.7893 4.96086 20 5.46957 20 6V20C20 20.5304 19.7893 21.0391 19.4142 21.4142C19.0391 21.7893 18.5304 22 18 22H6C5.46957 22 4.96086 21.7893 4.58579 21.4142C4.21071 21.0391 4 20.5304 4 20V6C4 5.46957 4.21071 4.96086 4.58579 4.58579C4.96086 4.21071 5.46957 4 6 4H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <rect x="8" y="2" width="8" height="6" rx="1" ry="1" stroke="currentColor" strokeWidth="2"/>
-                    </svg>
+                  >
+                    {copiedIndex === i ? (
+                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    ) : (
+                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    )}
                   </button>
-                  {copiedIndex === i && <span className="copied-feedback">Copiado!</span>}
-                </span>
-                (<b>x{(p['Und.Sai.'] === 'KG' || p['Und.Sai.'] === 'SC') ? p.quantidadeUtilizada.toFixed(3) : p.quantidadeUtilizada}</b>) 
-                - R$ {Number(p["Preço Venda"]).toFixed(2)} ({p['Und.Sai.']})
-                <span className="total-item-price"> / Total: R$ {(Number(p["Preço Venda"]) * p.quantidadeUtilizada).toFixed(2)}</span>
-                <span className="stock-info"> (Estoque: {p.Quantidade})</span>
+                </div>
               </li>
             ))}
           </ul>
-          <div className="comb-row">
-            <b>Total da Combinação: R$ {result.combinacao.reduce((acc: number, p: any) => acc + p["Preço Venda"] * p.quantidadeUtilizada, 0).toFixed(2)}</b>
-            <div className="comb-actions">
-              <button onClick={() => handleRetirarCombinacaoClick(result.combinacao!)}>
-                Retirar Combinação
-              </button>
-              <AnimatedButton onClick={handleRecalculate} title="Buscar outra combinação" className="recalculate-btn">
-                Recalcular
-              </AnimatedButton>
-            </div>
+
+          <div className="result-actions">
+            <button className="primary-btn" onClick={() => handleRetirarCombinacaoClick(result.combinacao!)}>
+              Retirar Combinação
+            </button>
+            <AnimatedButton onClick={handleRecalculate} title="Buscar outra combinação" className="secondary-btn">
+              Recalcular
+            </AnimatedButton>
           </div>
         </div>
       )}

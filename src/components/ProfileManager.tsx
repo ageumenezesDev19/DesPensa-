@@ -10,18 +10,25 @@ export const ProfileManager: React.FC = () => {
 
   return (
     <>
-      <div className="profile-manager">
-        <div className="profile-selector">
-          <label>Perfil Ativo:</label>
-          <CustomDropdown 
-            options={profiles}
-            selectedValue={activeProfile}
-            onSelect={setActiveProfile}
-          />
+      <div className="profile-manager animated-fadein">
+        <div className="profile-info">
+          <h3>Gerenciar Perfil</h3>
+          <p className="subtitle">Alterne entre estoques ou gerencie backups</p>
         </div>
-        
-        <div className="profile-actions">
-          <button onClick={() => setIsModalOpen(true)}>Gerenciar Perfis</button>
+
+        <div className="profile-controls">
+          <div className="select-wrapper">
+             <CustomDropdown 
+                options={profiles}
+                selectedValue={activeProfile}
+                onSelect={setActiveProfile}
+              />
+          </div>
+          
+          <button className="manage-btn" onClick={() => setIsModalOpen(true)}>
+            <span className="icon">⚙️</span>
+            Gerenciar
+          </button>
         </div>
       </div>
 

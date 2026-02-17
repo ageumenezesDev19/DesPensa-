@@ -1,24 +1,133 @@
 .product-table {
   background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px #0001;
-  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08); // Softer shadow
+  padding: 1.5rem;
   margin-bottom: 2rem;
+  border: 1px solid #eef0f2;
+
+  h2 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: #2c3e50;
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    .count-badge {
+      font-size: 0.8em;
+      color: #7f8c8d;
+      font-weight: normal;
+    }
+  }
+
+  .empty-state {
+    color: #7f8c8d;
+    text-align: center;
+    padding: 2rem;
+    font-style: italic;
+  }
+
+  .table-responsive {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid #eef0f2;
+  }
+
   table {
     width: 100%;
     border-collapse: collapse;
-    th, td {
-      padding: 0.5rem;
-      border-bottom: 1px solid #eee;
-      text-align: left;
+    min-width: 600px; // Ensure table doesn't squish too much
+
+    thead {
+      background-color: #f8f9fa;
+      th {
+        padding: 12px 16px;
+        text-align: left;
+        font-weight: 600;
+        color: #495057;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        border-bottom: 2px solid #e9ecef;
+      }
     }
-    th {
-      background: #f0f0ff;
+
+    tbody {
+      tr {
+        transition: background-color 0.2s;
+        &:hover {
+          background-color: #f8f9fa;
+        }
+        &:last-child td {
+          border-bottom: none;
+        }
+      }
+
+      td {
+        padding: 12px 16px;
+        border-bottom: 1px solid #e9ecef;
+        color: #212529;
+        font-size: 0.95rem;
+
+        &.code-cell {
+          font-family: monospace;
+          color: #6c757d;
+        }
+        &.desc-cell {
+          font-weight: 500;
+        }
+        &.price-cell {
+          font-weight: bold;
+          color: #28a745;
+        }
+      }
     }
   }
+
+  .pagination-controls {
+    display: flex;
+    justify-content: center; // Center the controls
+    align-items: center;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eef0f2;
+
+    .page-info {
+      font-size: 0.95rem;
+      color: #495057;
+    }
+
+    .page-btn {
+      background-color: #fff;
+      border: 1px solid #ced4da;
+      padding: 6px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      color: #495057;
+      transition: all 0.2s;
+
+      &:hover:not(:disabled) {
+        background-color: #e9ecef;
+        border-color: #adb5bd;
+        color: #212529;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background-color: #f8f9fa;
+      }
+    }
+  }
+
+  // Responsive adjustments for mobile cards if needed, but table-responsive handles scroll well
   @media (max-width: 600px) {
-    table, thead, tbody, th, td, tr { display: block; }
-    th, td { padding: 8px; }
-    tr { margin-bottom: 1rem; }
+    padding: 1rem;
+    
+    // Optional: Only show essential columns on very small screens?
+    // Or just rely on horizontal scroll.
   }
 }

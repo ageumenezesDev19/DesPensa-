@@ -23,7 +23,7 @@ interface EstoqueContextType {
   view: string;
   
   // Search State
-  searchResult: { status: string; produto?: Produto; combinacao?: ProdutoComQuantidade[] } | null;
+  searchResult: { status: string; produtos?: Produto[]; combinacao?: ProdutoComQuantidade[] } | null;
   searching: boolean;
   showCancel: boolean;
   preco: string;
