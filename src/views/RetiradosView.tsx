@@ -1,24 +1,17 @@
-
 import React from 'react';
 import FileUpload from '../components/FileUpload';
-import WithdrawnTable, { Retirado } from '../components/WithdrawnTable';
+import WithdrawnTable from '../components/WithdrawnTable';
 import { exportarRetiradosParaCsv } from '../utils/db_utils';
+import { useEstoqueContext } from '../context/EstoqueContext';
 
-interface RetiradosViewProps {
-  retirados: Retirado[];
-  setLoading: (loading: boolean) => void;
-  onFileUpload: (content: string) => void;
-  handleDownload: (filename: string, content: string) => void;
-  handleDelete: (id: string) => void;
-}
-
-export const RetiradosView: React.FC<RetiradosViewProps> = ({
-  retirados,
-  setLoading,
-  onFileUpload,
-  handleDownload,
-  handleDelete,
-}) => {
+export const RetiradosView: React.FC = () => {
+  const {
+    retirados,
+    setLoading,
+    handleLoadRetirados,
+    handleDownload,
+    handleDeleteRetirado
+  } = useEstoqueContext();
 
   const onDownload = () => {
     const retiradosParaExportar = retirados.map(r => ({
@@ -38,7 +31,7 @@ export const RetiradosView: React.FC<RetiradosViewProps> = ({
       <div className="controls">
         <FileUpload
           setLoading={setLoading}
-          onFileUpload={onFileUpload}
+          onFileUpload={(content) => handleLoadRetirados(content)}
           label="Importar retirados.csv"
           accept=".csv"
         />
@@ -46,7 +39,7 @@ export const RetiradosView: React.FC<RetiradosViewProps> = ({
           Salvar/Baixar Retirados
         </button>
       </div>
-      <WithdrawnTable produtos={retirados} handleDelete={handleDelete} />
+      <WithdrawnTable produtos={retirados} handleDelete={handleDeleteRetirado} />
     </>
   );
 };

@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Produto } from '../utils/estoque';
 import { buscarProdutoProximo } from '../utils/busca';
-import { ProdutoComQuantidade } from '../App';
+import { ProdutoComQuantidade } from '../context/EstoqueContext';
 
 export type SearchMode = 'combinacao' | 'produto_preco' | 'produto_nome';
 
