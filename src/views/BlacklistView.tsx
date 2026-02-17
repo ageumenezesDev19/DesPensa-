@@ -1,26 +1,18 @@
-
 import React from 'react';
 import FileUpload from '../components/FileUpload';
 import BlacklistManager from '../components/BlacklistManager';
 import { saveBlacklistToString } from '../utils/blacklist_utils';
+import { useEstoqueContext } from '../context/EstoqueContext';
 
-interface BlacklistViewProps {
-  blacklist: string[];
-  setBlacklist: React.Dispatch<React.SetStateAction<string[]>>;
-  setLoading: (loading: boolean) => void;
-  onFileUpload: (content: string) => void;
-  handleDownload: (filename: string, content: string) => void;
-  showNotification: (message: string) => void;
-}
-
-export const BlacklistView: React.FC<BlacklistViewProps> = ({
-  blacklist,
-  setBlacklist,
-  setLoading,
-  onFileUpload,
-  handleDownload,
-  showNotification,
-}) => {
+export const BlacklistView: React.FC = () => {
+  const {
+    blacklist,
+    setBlacklist,
+    setLoading,
+    handleLoadBlacklist,
+    handleDownload,
+    showNotification
+  } = useEstoqueContext();
 
   const onDownload = () => {
     const content = saveBlacklistToString(blacklist);
@@ -32,7 +24,7 @@ export const BlacklistView: React.FC<BlacklistViewProps> = ({
       <div className="controls">
         <FileUpload
           setLoading={setLoading}
-          onFileUpload={onFileUpload}
+          onFileUpload={(content) => handleLoadBlacklist(content)}
           label="Importar blacklist.txt"
           accept=".txt"
         />

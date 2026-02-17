@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Produto } from '../utils/estoque';
 import { buscarProdutoProximo } from '../utils/busca';
-import { ProdutoComQuantidade } from '../App';
+import { ProdutoComQuantidade } from '../context/EstoqueContext';
 
 export type SearchMode = 'combinacao' | 'produto_preco' | 'produto_nome';
 
@@ -141,7 +141,7 @@ export const useSearch = ({ produtos, blacklist, preco, searchMode, showNotifica
           payload: {
             df: produtosFiltrados,
             precoDesejado,
-            tolerancia: 0.4,
+            tolerancia: 0.3,
             usados: Array.from(currentPreviouslyFound),
             blacklist,
           },

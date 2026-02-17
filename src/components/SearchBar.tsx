@@ -2,32 +2,33 @@ import React, { useEffect, useRef } from "react";
 import { Produto } from "../utils/estoque";
 import AnimatedButton from "./AnimatedButton";
 import "../styles/SearchBar.scss";
-import { ProdutoComQuantidade } from "../App";
+import { ProdutoComQuantidade } from "../context/EstoqueContext";
 import { SearchMode } from "../hooks/useSearch";
+import { useEstoqueContext } from "../context/EstoqueContext";
 
-interface Props {
-  produtos: Produto[];
-  onRetirar: (produto: Produto) => void;
-  onRetirarCombinacao: (combinacao: ProdutoComQuantidade[]) => void;
-  result: { status: string; produto?: Produto; combinacao?: ProdutoComQuantidade[] } | null;
-  setResult: (result: any) => void;
-  preco: string;
-  setPreco: (preco: string) => void;
-  searchMode: SearchMode;
-  setSearchMode: (mode: SearchMode) => void;
-  handleSearch: (isRecalculation: boolean, previouslyFoundSet: Set<string> | null) => void;
-  handleRecalculate: () => void;
-  searching?: boolean;
-  onCancelSearch?: () => void;
-  showCancel?: boolean;
-  showGlobalCancel?: boolean;
-  focusInput?: boolean;
-  setFocusInput?: (focus: boolean) => void;
-}
+const SearchBar: React.FC = () => {
+  const {
+    produtos,
+    handleRetirarSingleProduct: onRetirar,
+    handleRetirarCombinacao: onRetirarCombinacao,
+    searchResult: result,
+    setSearchResult: setResult,
+    preco,
+    setPreco,
+    searchMode,
+    setSearchMode,
+    handleSearch,
+    handleRecalculate,
+    searching,
+    handleCancelSearch: onCancelSearch,
+    showCancel,
+    focusSearchInput: focusInput,
+    setFocusSearchInput: setFocusInput
+  } = useEstoqueContext();
 
-const SearchBar: React.FC<Props> = ({ produtos, onRetirar, onRetirarCombinacao, result, setResult, preco, setPreco, searchMode, setSearchMode, handleSearch, handleRecalculate, searching, onCancelSearch, showCancel, focusInput, setFocusInput }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [copiedIndex, setCopiedIndex] = React.useState<number | null>(null);
+
 
   useEffect(() => {
     if (focusInput && inputRef.current) {
@@ -76,7 +77,7 @@ const SearchBar: React.FC<Props> = ({ produtos, onRetirar, onRetirarCombinacao, 
           handleRetirarCombinacaoClick(result.combinacao);
         }
       } else {
-        handleSearch(false, null);
+        handleSearch(false);
       }
     }
   };
@@ -118,7 +119,7 @@ const SearchBar: React.FC<Props> = ({ produtos, onRetirar, onRetirarCombinacao, 
           <option value="produto_preco">Buscar Produto por Preço</option>
           <option value="produto_nome">Buscar Produto por Nome</option>
         </select>
-        <button onClick={() => handleSearch(false, null)} disabled={produtos.length === 0 || !preco || !!searching}>
+        <button onClick={() => handleSearch(false)} disabled={produtos.length === 0 || !preco || !!searching}>
           Buscar
         </button>
       </div>
