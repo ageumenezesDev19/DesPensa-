@@ -1,46 +1,160 @@
 header {
+  background-color: var(--header-bg);
+  color: var(--header-text);
+  padding: 1.5rem 2rem 1.25rem;
+  border-bottom: 3px solid var(--secondary-color);
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 2rem;
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #dee2e6;
+  flex-direction: column;
+  gap: 1.5rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 
-  .made-by {
-    font-style: italic;
-    color: #6c757d;
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+
+    h1 {
+      margin: 0;
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -1px;
+      background: linear-gradient(135deg, #fff, #a0a0ff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      [data-theme='dark'] & {
+        background: linear-gradient(135deg, #e0e0e0, var(--primary-color));
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+    }
+  }
+
+  .theme-toggle {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1.5px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50px;
+    padding: 8px 16px;
+    color: #fff;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    gap: 10px;
     font-size: 0.9rem;
+
+    [data-theme='dark'] & {
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+      background: rgba(74, 74, 226, 0.05);
+    }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      [data-theme='dark'] & {
+        background: rgba(74, 74, 226, 0.1);
+      }
+    }
+
+    .icon {
+      font-size: 1.2rem;
+    }
+
+    .text {
+      white-space: nowrap;
+    }
   }
 
   nav {
+    display: flex;
+    gap: 1rem;
+    
     button {
-      position: relative; // Needed for ::after positioning
-      overflow: hidden; // Hide overflow of the underline
-      transition: color 0.3s ease; // Smooth color transition
-      font-size: 1rem;
+      position: relative;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.7);
+      border: none;
+      padding: 8px 16px;
+      font-weight: 700;
+      font-size: 1.05rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border-radius: 8px;
+
+      [data-theme='dark'] & {
+        color: rgba(224, 224, 224, 0.6);
+      }
 
       &::after {
         content: '';
         position: absolute;
         bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 3px; // Thickness of the underline
-        background-color: #0056b3; // Color of the underline
-        transform: translateX(-100%); // Start off-screen to the left
-        transition: transform 0.3s ease-out; // Animation for the underline
+        left: 50%;
+        width: 0;
+        height: 3px;
+        background-color: var(--secondary-color);
+        transition: all 0.3s ease;
+        transform: translateX(-50%);
+        border-radius: 2px;
+      }
+
+      &:hover:not(.active) {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.1);
+        [data-theme='dark'] & {
+          color: #fff;
+          background: rgba(255, 255, 255, 0.05);
+        }
       }
 
       &.active {
-        background-color: #007bff;
-        color: white;
-        // Remove border-bottom as it will be replaced by ::after
-        border-bottom: none; // Ensure no default border interferes
-
+        color: #fff;
+        background: rgba(255, 255, 255, 0.15);
+        
         &::after {
-          transform: translateX(0); // Slide in from the left
+          width: 80%;
+        }
+
+        [data-theme='dark'] & {
+          background: rgba(255, 255, 255, 0.1);
+          color: #fff;
         }
       }
+    }
+  }
+}
+
+.footer {
+  padding: 2rem 1rem;
+  text-align: center;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--card-bg);
+  margin-top: auto;
+
+  .made-by {
+    font-size: 0.85rem;
+    color: var(--font-color);
+    opacity: 0.6;
+    font-style: italic;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
+}
+
+@media (max-width: 600px) {
+  header {
+    padding: 1rem;
+    .header-top h1 { font-size: 1.5rem; }
+    .made-by { right: 1rem; }
+    nav {
+      gap: 0.5rem;
+      button { padding: 6px 10px; font-size: 0.95rem; }
     }
   }
 }

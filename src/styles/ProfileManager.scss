@@ -1,10 +1,10 @@
 .profile-manager {
-  background-color: #fff;
+  background-color: var(--card-bg);
   border-radius: 12px;
   padding: 1.5rem 2rem;
   margin-bottom: 2rem;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08); // Consistent shadow
-  border: 1px solid #eef0f2;
+  box-shadow: var(--box-shadow);
+  border: 1px solid var(--border-color);
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -20,11 +20,12 @@
     h3 {
       margin: 0;
       font-size: 1.25rem;
-      color: #2c3e50;
+      color: var(--primary-color);
     }
     .subtitle {
       margin: 0.25rem 0 0;
-      color: #7f8c8d;
+      color: var(--font-color);
+      opacity: 0.7;
       font-size: 0.9rem;
     }
   }
@@ -44,23 +45,23 @@
       gap: 0.5rem;
       padding: 10px 20px;
       border-radius: 8px;
-      border: none;
-      background-color: #f8f9fa;
-      color: #495057;
+      border: 1px solid var(--border-color);
+      background-color: var(--card-bg);
+      color: var(--font-color);
       font-weight: 600;
       font-size: 0.95rem;
       cursor: pointer;
       transition: all 0.2s ease;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      box-shadow: var(--box-shadow);
 
       .icon {
         font-size: 1.1rem;
       }
 
       &:hover {
-        background-color: #e9ecef;
+        background-color: var(--border-color);
         transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        box-shadow: var(--shadow-color);
       }
 
       &:active {

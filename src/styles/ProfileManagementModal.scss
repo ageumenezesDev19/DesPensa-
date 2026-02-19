@@ -9,9 +9,9 @@
   overflow: hidden; // For header border radius
 
   .modal-header {
-    background-color: #f8f9fa;
+    background-color: var(--header-bg);
     padding: 1rem 1.5rem;
-    border-bottom: 1px solid #e9ecef;
+    border-bottom: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -19,7 +19,7 @@
     h2 {
       margin: 0;
       font-size: 1.25rem;
-      color: #343a40;
+      color: var(--header-text);
     }
 
     .close-btn {
@@ -33,7 +33,7 @@
       transition: color 0.2s;
 
       &:hover {
-        color: #495057;
+        color: var(--secondary-color);
       }
     }
   }
@@ -54,7 +54,8 @@
   .section-title {
     font-size: 0.85rem;
     text-transform: uppercase;
-    color: #6c757d;
+    color: var(--font-color);
+    opacity: 0.7;
     font-weight: 700;
     letter-spacing: 0.5px;
     margin: 0 0 0.75rem 0;
@@ -72,18 +73,18 @@
     align-items: center;
     padding: 0.75rem 1rem;
     border-radius: 8px;
-    background-color: #fff;
-    border: 1px solid #e9ecef;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
     transition: all 0.2s;
 
     &.active {
-      border-color: #007bff;
-      background-color: #f0f7ff;
+      border-color: var(--primary-color);
+      background-color: var(--background-color);
     }
 
     &:hover:not(.active) {
-      background-color: #f8f9fa;
-      border-color: #dee2e6;
+      background-color: var(--background-color);
+      border-color: var(--border-color);
     }
 
     .profile-info {
@@ -93,14 +94,14 @@
 
       .profile-name {
         font-weight: 500;
-        color: #212529;
+        color: var(--font-color);
       }
 
       .badge {
         font-size: 0.7rem;
         padding: 2px 6px;
         border-radius: 4px;
-        background-color: #007bff;
+        background-color: var(--primary-color);
         color: white;
         font-weight: 600;
       }
@@ -126,16 +127,16 @@
       transition: all 0.2s;
 
       &:hover:not(:disabled) {
-        background-color: #e9ecef;
-        color: #495057;
+        background-color: var(--border-color);
+        color: var(--font-color);
       }
 
-      &.edit:hover { background-color: #e2e6ea; color: #007bff; }
-      &.backup:hover { background-color: #e2e6ea; color: #17a2b8; }
-      &.delete:hover { background-color: #ffe6e6; color: #dc3545; }
-      &.save { color: #28a745; background-color: #e6ffed; }
-      &.save:hover { background-color: #d4edda; }
-      &.cancel:hover { background-color: #ffe6e6; color: #dc3545; }
+      &.edit:hover { background-color: var(--border-color); color: var(--primary-color); }
+      &.backup:hover { background-color: var(--border-color); color: var(--primary-color); }
+      &.delete:hover { background-color: var(--danger-color); color: white; }
+      &.save { color: var(--success-color); background-color: var(--background-color); }
+      &.save:hover { background-color: var(--border-color); }
+      &.cancel:hover { background-color: var(--danger-color); color: white; }
 
       &:disabled {
         opacity: 0.3;
@@ -152,14 +153,16 @@
       input {
         flex-grow: 1;
         padding: 4px 8px;
-        border: 1px solid #ced4da;
+        border: 1px solid var(--border-color);
+        background-color: var(--input-bg);
+        color: var(--font-color);
         border-radius: 4px;
         font-size: 0.95rem;
 
         &:focus {
           outline: none;
-          border-color: #007bff;
-          box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+          border-color: var(--primary-color);
+          box-shadow: 0 0 0 2px var(--shadow-color);
         }
       }
     }
@@ -174,14 +177,16 @@
         input {
           flex-grow: 1;
           padding: 8px 12px;
-          border: 1px solid #ced4da;
+          border: 1px solid var(--border-color);
+          background-color: var(--input-bg);
+          color: var(--font-color);
           border-radius: 6px;
           font-size: 0.95rem;
 
           &:focus {
             outline: none;
-            border-color: #007bff;
-             box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+            border-color: var(--primary-color);
+             box-shadow: 0 0 0 2px var(--shadow-color);
           }
         }
       }
@@ -203,7 +208,7 @@
         content: "";
         display: block;
         height: 1px;
-        background-color: #e9ecef;
+        background-color: var(--border-color);
         position: absolute;
         top: 50%;
         width: 45%;
@@ -214,7 +219,7 @@
 
     .primary-btn {
       padding: 8px 16px;
-      background-color: #007bff;
+      background-color: var(--primary-color);
       color: white;
       border: none;
       border-radius: 6px;
@@ -224,20 +229,22 @@
       white-space: nowrap;
 
       &:hover:not(:disabled) {
-        background-color: #0056b3;
+        background-color: var(--primary-color-hover);
       }
 
       &:disabled {
-        background-color: #a0c4ff;
+        background-color: var(--border-color);
+        color: var(--font-color);
+        opacity: 0.5;
         cursor: not-allowed;
       }
     }
 
     .secondary-btn {
       padding: 10px;
-      background-color: #f8f9fa;
-      border: 1px solid #ced4da;
-      color: #495057;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      color: var(--font-color);
       border-radius: 6px;
       font-weight: 600;
       cursor: pointer;
@@ -250,14 +257,14 @@
       .icon { font-size: 1.1em; }
 
       &:hover {
-        background-color: #e2e6ea;
-        border-color: #adb5bd;
+        background-color: var(--border-color);
       }
     }
 
     .help-text {
       font-size: 0.8rem;
-      color: #6c757d;
+      color: var(--font-color);
+      opacity: 0.6;
       margin: 0.25rem 0 0;
       text-align: center;
     }
