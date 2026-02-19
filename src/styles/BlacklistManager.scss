@@ -1,7 +1,7 @@
 .blacklist-manager {
-  background: #fff;
+  background: var(--card-bg);
   border-radius: 8px;
-  box-shadow: 0 2px 8px #0001;
+  box-shadow: var(--box-shadow);
   padding: 1rem;
   h2 { margin-top: 0; }
   ul {
@@ -12,16 +12,16 @@
       align-items: center;
       justify-content: space-between;
       padding: 0.5rem 0;
-      border-bottom: 1px solid #eee;
+      border-bottom: 1px solid var(--border-color);
       button {
-        background: #e53935;
+        background: var(--danger-color);
         color: #fff;
         border: none;
         border-radius: 4px;
         padding: 0.5rem 0.7rem;
         cursor: pointer;
         transition: background 0.2s;
-        &:hover { background: #b71c1c; }
+        &:hover { opacity: 0.9; }
       }
     }
   }
@@ -29,12 +29,14 @@
     margin-top: 1rem;
     padding: 0.5rem;
     border-radius: 4px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-color);
+    background: var(--input-bg);
+    color: var(--font-color);
     width: 200px;
   }
   button {
     margin-left: 1rem;
-    background: #2d2d6e;
+    background: var(--primary-color);
     color: #fff;
     border: none;
     border-radius: 4px;
@@ -42,6 +44,6 @@
     font-weight: bold;
     cursor: pointer;
     transition: background 0.2s;
-    &:hover { background: #4444aa; }
+    &:hover { background: var(--primary-color-hover); }
   }
 }

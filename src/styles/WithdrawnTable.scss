@@ -1,26 +1,26 @@
 .withdrawn-table-container {
   padding: 20px;
-  background-color: #f9f9f9;
+  background-color: var(--background-color);
 
   .date-navigator {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-    background-color: #fff;
+    background-color: var(--card-bg);
     padding: 15px;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--box-shadow);
 
     h2 {
       margin: 0;
       font-size: 1.4em;
-      color: #333;
+      color: var(--primary-color);
       text-transform: capitalize;
     }
 
     button {
-      background-color: #007bff;
+      background-color: var(--primary-color);
       color: white;
       border: none;
       padding: 10px 15px;
@@ -35,7 +35,8 @@
   }
 
   .day-summary {
-    background-color: #e9f5ff;
+    background-color: var(--background-color);
+    border: 1px solid var(--primary-color);
     padding: 15px;
     border-radius: 8px;
     margin-bottom: 20px;
@@ -43,18 +44,19 @@
 
     h3 {
       margin: 0;
-      color: #0056b3;
+      color: var(--primary-color);
       font-size: 1.2em;
     }
   }
 
   .no-data {
     text-align: center;
-    color: #777;
+    color: var(--font-color);
+    opacity: 0.7;
     padding: 20px;
-    background-color: #fff;
+    background-color: var(--card-bg);
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--box-shadow);
   }
 
   .withdrawn-table {
@@ -68,22 +70,24 @@
       th, td {
         padding: 12px 15px;
         text-align: left;
-        border-bottom: 1px solid #ddd;
+        border-bottom: 1px solid var(--border-color);
       }
 
       thead th {
-        background-color: #007bff;
+        background-color: var(--primary-color);
         color: white;
         font-weight: bold;
       }
 
       tbody tr {
-        background-color: #fff;
+        background-color: var(--card-bg);
+        color: var(--font-color);
         &:nth-of-type(even) {
-          background-color: #f3f3f3;
+          background-color: var(--background-color);
         }
         &:hover {
-          background-color: #e9f5ff;
+          opacity: 0.9;
+          background-color: var(--border-color);
         }
 
         .delete-btn{
@@ -107,19 +111,19 @@
     h2 {
       text-align: center;
       margin-bottom: 20px;
-      color: #333;
+      color: var(--primary-color);
     }
 
     .month-section {
-      background-color: #fff;
+      background-color: var(--card-bg);
       padding: 20px;
       border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      box-shadow: var(--box-shadow);
       margin-bottom: 20px;
 
       .month-header {
-        color: #0056b3;
-        border-bottom: 2px solid #007bff;
+        color: var(--primary-color);
+        border-bottom: 2px solid var(--primary-color);
         padding-bottom: 10px;
         margin-bottom: 15px;
         text-transform: capitalize;
@@ -152,7 +156,7 @@
       margin-bottom: 15px;
 
       .day-header {
-        color: #555;
+        color: var(--font-color);
         margin-bottom: 10px;
         cursor: pointer;
         display: flex;
@@ -163,18 +167,18 @@
         transition: background-color 0.2s ease-in-out;
 
         &:hover {
-          background-color: #f0f0f0;
+          background-color: var(--background-color);
         }
       }
 
       ul {
         list-style-type: none;
         padding-left: 15px;
-        border-left: 3px solid #ddd;
+        border-left: 3px solid var(--primary-color);
 
         li {
           padding: 8px 0;
-          color: #666;
+          color: var(--font-color);
 
           display: flex;
           justify-content: space-between;

@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: var(--shadow-color);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -12,20 +12,23 @@
 }
 
 .modal-content {
-  background-color: white;
+  background-color: var(--card-bg);
   padding: 2rem;
   border-radius: 8px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--box-shadow);
+  border: 1px solid var(--border-color);
   width: 90%;
   max-width: 500px;
   text-align: center;
 
   h2 {
     margin-top: 0;
+    color: var(--primary-color);
   }
 
   p {
     margin-bottom: 1.5rem;
+    color: var(--font-color);
   }
 }
 
@@ -42,20 +45,20 @@
     font-size: 1rem;
 
     &.cancel-btn {
-      background-color: #6c757d;
-      color: white;
+      background-color: var(--border-color);
+      color: var(--font-color);
 
       &:hover {
-        background-color: #5a6268;
+        opacity: 0.9;
       }
     }
 
     &:not(.cancel-btn) {
-      background-color: #007bff;
+      background-color: var(--primary-color);
       color: white;
 
       &:hover {
-        background-color: #0056b3;
+        background-color: var(--primary-color-hover);
       }
     }
   }
