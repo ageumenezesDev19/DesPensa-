@@ -6,6 +6,11 @@
 @use "./AnimatedButton.scss";
 @use "./App.scss";
 
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
 .app-container {
   font-family: 'Inter', Arial, sans-serif;
   background: var(--background-color);
