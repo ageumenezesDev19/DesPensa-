@@ -6,6 +6,11 @@
 @use "./AnimatedButton.scss";
 @use "./App.scss";
 
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
 .app-container {
   font-family: 'Inter', Arial, sans-serif;
   background: var(--background-color);
@@ -56,6 +61,7 @@
     }
     input {
       min-width: 180px;
+      flex: 1;
       background: var(--input-bg);
       color: var(--font-color);
       border: 1.5px solid var(--primary-color);
@@ -327,3 +333,21 @@
     color: var(--font-color);
   }
 }
+
+// Global modal responsiveness
+@media (max-width: 600px) {
+  .modal-content, .global-cancel-content {
+    padding: 1.5rem;
+    width: 90%;
+    min-width: auto;
+    box-sizing: border-box;
+  }
+  .modal-actions {
+    flex-direction: column;
+    gap: 0.8rem;
+    button {
+      width: 100%;
+    }
+  }
+}
+

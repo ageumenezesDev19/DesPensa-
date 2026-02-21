@@ -150,11 +150,37 @@ header {
 @media (max-width: 600px) {
   header {
     padding: 1rem;
-    .header-top h1 { font-size: 1.5rem; }
-    .made-by { right: 1rem; }
+    gap: 1rem;
+    .header-top { 
+      flex-direction: row; 
+      align-items: center; 
+      justify-content: space-between;
+      h1 { font-size: 1.5rem; } 
+    }
+    .theme-toggle {
+      padding: 6px 12px;
+      .text { display: none; } // Hide text on small screens to save space
+    }
     nav {
       gap: 0.5rem;
-      button { padding: 6px 10px; font-size: 0.95rem; }
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      
+      &::-webkit-scrollbar {
+        height: 2px;
+      }
+      &::-webkit-scrollbar-thumb {
+        background-color: var(--secondary-color);
+        border-radius: 4px;
+      }
+      
+      button { 
+        padding: 6px 12px; 
+        font-size: 0.95rem; 
+        flex: 0 0 auto; // Prevent squishing
+        white-space: nowrap;
+      }
     }
   }
 }

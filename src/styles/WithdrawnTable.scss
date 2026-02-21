@@ -6,6 +6,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
     margin-bottom: 20px;
     background-color: var(--card-bg);
     padding: 15px;
@@ -17,6 +19,15 @@
       font-size: 1.4em;
       color: var(--primary-color);
       text-transform: capitalize;
+      text-align: center;
+      flex: 1 1 100%;
+      order: -1; // Keep the title on top or handle flex order if necessary, but actually let's just use gap and let it flow.
+    }
+
+    // Adjusting media query logic inside element for cleaner flow
+    h2 {
+      flex: 1 1 auto; // Reset to allow side-by-side if there's room
+      min-width: 250px;
     }
 
     button {
@@ -206,6 +217,28 @@
             
           }
         }
+      }
+    }
+  }
+
+  @media (max-width: 600px) {
+    padding: 10px;
+
+    .date-navigator {
+      flex-direction: column;
+      gap: 1rem;
+      button { width: 100%; padding: 12px; }
+      h2 { font-size: 1.2rem; }
+    }
+
+    .monthly-summary .day-details ul li {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+      
+      .delete-btn-small {
+        margin-top: 0.5rem;
+        align-self: flex-end;
       }
     }
   }

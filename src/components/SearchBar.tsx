@@ -28,6 +28,12 @@ const SearchBar: React.FC = () => {
 
   const inputRef = useRef<HTMLInputElement>(null);
   const [copiedIndex, setCopiedIndex] = React.useState<number | null>(null);
+  const [combPage, setCombPage] = React.useState<number>(1);
+  const COMB_ITEMS_PER_PAGE = 4;
+
+  React.useEffect(() => {
+    setCombPage(1);
+  }, [result]);
 
 
   useEffect(() => {
@@ -202,7 +208,9 @@ const SearchBar: React.FC = () => {
           </div>
           
           <ul className="result-list">
-            {result.combinacao.map((p: any, i: number) => (
+            {result.combinacao
+              .slice((combPage - 1) * COMB_ITEMS_PER_PAGE, combPage * COMB_ITEMS_PER_PAGE)
+              .map((p: any, i: number) => (
               <li key={i} className="result-item">
                 <div className="item-info">
                   <span className="item-name">
@@ -210,7 +218,10 @@ const SearchBar: React.FC = () => {
                   </span>
                   <div className="item-details">
                     <span className="item-quantity">
-                      {(p['Und.Sai.'] === 'KG' || p['Und.Sai.'] === 'SC') ? p.quantidadeUtilizada.toFixed(3) : p.quantidadeUtilizada} {p['Und.Sai.']}
+                      Retirar: {(p['Und.Sai.'] === 'KG' || p['Und.Sai.'] === 'SC') ? p.quantidadeUtilizada.toFixed(3) : p.quantidadeUtilizada} {p['Und.Sai.']} 
+                      <span style={{ fontSize: '0.9em', color: '#666', marginLeft: '8px' }}>
+                        (Estoque: {p.Quantidade})
+                      </span>
                     </span>
                     <span className="item-price">
                       R$ {Number(p["Preço Venda"]).toFixed(2)}
@@ -237,6 +248,30 @@ const SearchBar: React.FC = () => {
               </li>
             ))}
           </ul>
+          
+          {result.combinacao.length > COMB_ITEMS_PER_PAGE && (
+            <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '1rem', marginBottom: '1rem' }}>
+              <button 
+                className="secondary-btn small-btn" 
+                disabled={combPage === 1} 
+                onClick={() => setCombPage(prev => prev - 1)}
+                style={{ padding: '4px 12px', fontSize: '0.9em' }}
+              >
+                Anterior
+              </button>
+              <span style={{ alignSelf: 'center', fontWeight: 'bold', fontSize: '0.95em' }}>
+                Página {combPage} de {Math.ceil(result.combinacao.length / COMB_ITEMS_PER_PAGE)}
+              </span>
+              <button 
+                className="secondary-btn small-btn" 
+                disabled={combPage === Math.ceil(result.combinacao.length / COMB_ITEMS_PER_PAGE)} 
+                onClick={() => setCombPage(prev => prev + 1)}
+                style={{ padding: '4px 12px', fontSize: '0.9em' }}
+              >
+                Próxima
+              </button>
+            </div>
+          )}
 
           <div className="result-actions">
             <button className="primary-btn" onClick={() => handleRetirarCombinacaoClick(result.combinacao!)}>
