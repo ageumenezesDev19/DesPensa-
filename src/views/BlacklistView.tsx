@@ -1,7 +1,6 @@
 import React from 'react';
 import FileUpload from '../components/FileUpload';
 import BlacklistManager from '../components/BlacklistManager';
-import { saveBlacklistToString } from '../utils/blacklist_utils';
 import { useEstoqueContext } from '../context/EstoqueContext';
 
 export const BlacklistView: React.FC = () => {
@@ -10,14 +9,9 @@ export const BlacklistView: React.FC = () => {
     setBlacklist,
     setLoading,
     handleLoadBlacklist,
-    handleDownload,
     showNotification
   } = useEstoqueContext();
 
-  const onDownload = () => {
-    const content = saveBlacklistToString(blacklist);
-    handleDownload('blacklist.txt', content);
-  }
 
   return (
     <>
@@ -28,9 +22,6 @@ export const BlacklistView: React.FC = () => {
           label="Importar blacklist.txt"
           accept=".txt"
         />
-        <button onClick={onDownload} disabled={blacklist.length === 0}>
-          Salvar/Baixar Blacklist
-        </button>
       </div>
       <BlacklistManager
         blacklist={blacklist}
