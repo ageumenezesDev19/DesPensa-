@@ -1,0 +1,38 @@
+import { useStorage } from './useStorage';
+import { Product } from '../utils/inventory';
+import { processData } from '../utils/db_utils';
+import { useEffect } from 'react';
+import { Withdrawn } from '../components/WithdrawnTable';
+
+export const useInventory = () => {
+  const [products, setProducts] = useStorage<Product[]>('products', []);
+  const [withdrawn, setWithdrawn] = useStorage<Withdrawn[]>('withdrawn', []);
+  const [blacklist, setBlacklist] = useStorage<string[]>('blacklist', []);
+
+  // Normalize numeric fields if they were stored as strings (legacy or different environment)
+  useEffect(() => {
+    try {
+      if (Array.isArray(products) && products.length > 0) {
+        const first = products[0] as any;
+        // Heuristic: if salePrice is a string, run processData to coerce numbers
+        if (typeof first.salePrice === 'string' || typeof first.quantity === 'string' || typeof first['Preço Venda'] === 'string') {
+          const normalized = processData(products as any[]);
+          setProducts(normalized as Product[]);
+          console.log('[useInventory] Products normalized after loading from storage');
+        }
+      }
+    } catch (e) {
+      console.error('[useInventory] Error normalizing products:', e);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return {
+    products,
+    setProducts,
+    withdrawn,
+    setWithdrawn,
+    blacklist,
+    setBlacklist,
+  };
+};

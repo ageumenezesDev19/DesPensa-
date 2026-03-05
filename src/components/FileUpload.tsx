@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { useTranslation } from 'react-i18next';
 import '../styles/FileUpload.scss';
 import { ImportModeModal } from "./ImportModeModal";
 
@@ -12,6 +13,7 @@ interface Props {
 }
 
 const FileUpload: React.FC<Props> = ({ setLoading, onFileUpload, label, accept }) => {
+  const { t } = useTranslation();
   const fileInput = useRef<HTMLInputElement>(null);
   const [showModal, setShowModal] = useState(false);
   const [fileContent, setFileContent] = useState<string | null>(null);
@@ -21,14 +23,14 @@ const FileUpload: React.FC<Props> = ({ setLoading, onFileUpload, label, accept }
       setLoading(true);
       const file = e.target.files[0];
       try {
-        console.log(`[FileUpload] Arquivo selecionado: ${file.name}, Tamanho: ${file.size} bytes`);
+        console.log(`[FileUpload] Selected file: ${file.name}, Size: ${file.size} bytes`);
         const content = await file.text();
-        console.log(`[FileUpload] Arquivo lido com sucesso. Tamanho do conteúdo: ${content.length} caracteres`);
+        console.log(`[FileUpload] File read successfully. Content length: ${content.length} characters`);
         setFileContent(content);
         setShowModal(true);
       } catch (err) {
         console.error("File reading error:", err);
-        alert("Erro ao ler o arquivo: " + (err instanceof Error ? err.message : String(err)));
+        alert(t('common.errorReadingFile', { error: (err instanceof Error ? err.message : String(err)), defaultValue: "Erro ao ler o arquivo." }));
       } finally {
         setLoading(false);
       }
@@ -43,11 +45,44 @@ const FileUpload: React.FC<Props> = ({ setLoading, onFileUpload, label, accept }
     setFileContent(null);
   };
 
-  const handleClick = () => {
-    if (fileInput.current) {
-      fileInput.current.value = "";
+  const handleClick = async () => {
+    const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+    
+    if (isTauri) {
+      try {
+        const { open } = await import('@tauri-apps/plugin-dialog');
+        const { readTextFile } = await import('@tauri-apps/plugin-fs');
+        
+        const acceptExtensions = accept.split(',').map(a => a.trim().replace('.', ''));
+        
+        const selected = await open({
+          multiple: false,
+          filters: [{ name: label, extensions: acceptExtensions }]
+        });
+        
+        if (selected) {
+          setLoading(true);
+          try {
+            const content = await readTextFile(selected as string);
+            setFileContent(content);
+            setShowModal(true);
+          } catch (readErr) {
+            console.error("Tauri file read error:", readErr);
+            alert(t('common.errorReadingFile', { error: String(readErr), defaultValue: "Erro ao ler o arquivo." }));
+          } finally {
+            setLoading(false);
+          }
+        }
+      } catch (err) {
+        console.error("Tauri open dialog error, falling back to web:", err);
+        // Fall back to regular file input
+        if (fileInput.current) fileInput.current.value = "";
+        fileInput.current?.click();
+      }
+    } else {
+      if (fileInput.current) fileInput.current.value = "";
+      fileInput.current?.click();
     }
-    fileInput.current?.click();
   };
 
   return (

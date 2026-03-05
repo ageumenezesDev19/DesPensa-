@@ -1,19 +1,21 @@
 import React, { useState } from "react";
-import { Produto } from "../utils/estoque";
+import { useTranslation } from 'react-i18next';
+import { Product } from "../utils/inventory";
 import "../styles/ProductTable.scss";
 
 interface Props {
-  produtos: Produto[];
+  products: Product[];
 }
 
 const ITEMS_PER_PAGE = 20;
 
-const ProductTable: React.FC<Props> = ({ produtos }) => {
+const ProductTable: React.FC<Props> = ({ products }) => {
+  const { t } = useTranslation();
   const [currentPage, setCurrentPage] = useState(1);
 
-  const totalPages = Math.ceil(produtos.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(products.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const currentProducts = produtos.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const currentProducts = products.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -21,36 +23,36 @@ const ProductTable: React.FC<Props> = ({ produtos }) => {
     }
   };
 
-  if (produtos.length === 0) {
+  if (products.length === 0) {
     return (
       <div className="product-table animated-fadein">
-        <p className="empty-state">Nenhum produto em estoque.</p>
+        <p className="empty-state">{t('inventory.emptyState', 'Nenhum produto em estoque.')}</p>
       </div>
     );
   }
 
   return (
     <div className="product-table animated-fadein">
-      <h2>Produtos em Estoque <span className="count-badge">({produtos.length})</span></h2>
+      <h2>{t('inventory.stockTitle', 'Produtos em Estoque')} <span className="count-badge">({products.length})</span></h2>
       <div className="table-responsive">
         <table>
           <thead>
             <tr>
-              <th>Código</th>
-              <th>Descrição</th>
-              <th>Qtd.</th>
-              <th>Unid.</th>
-              <th>Preço</th>
+              <th>{t('inventory.table.code', 'Código')}</th>
+              <th>{t('inventory.table.description', 'Descrição')}</th>
+              <th>{t('inventory.table.quantity', 'Qtd.')}</th>
+              <th>{t('inventory.table.unit', 'Unid.')}</th>
+              <th>{t('inventory.table.price', 'Preço')}</th>
             </tr>
           </thead>
           <tbody>
             {currentProducts.map((p, i) => (
-              <tr key={`${p.Código}-${i}`}>
-                <td className="code-cell">{p.Código}</td>
-                <td className="desc-cell">{p.Descrição}</td>
-                <td>{p.Quantidade}</td>
-                <td>{p['Und.Sai.']}</td>
-                <td className="price-cell">R$ {Number(p["Preço Venda"]).toFixed(2)}</td>
+              <tr key={`${p.code}-${i}`}>
+                <td className="code-cell">{p.code}</td>
+                <td className="desc-cell">{p.description}</td>
+                <td>{p.quantity}</td>
+                <td>{p.unitOut}</td>
+                <td className="price-cell">R$ {Number(p.salePrice).toFixed(2)}</td>
               </tr>
             ))}
           </tbody>
@@ -64,11 +66,11 @@ const ProductTable: React.FC<Props> = ({ produtos }) => {
             disabled={currentPage === 1}
             className="page-btn"
           >
-            Anterior
+            {t('pagination.previous', 'Anterior')}
           </button>
           
           <span className="page-info">
-            Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong>
+            {t('pagination.pageInfo', { current: currentPage, total: totalPages, defaultValue: `Página ${currentPage} de ${totalPages}` })}
           </span>
           
           <button 
@@ -76,13 +78,12 @@ const ProductTable: React.FC<Props> = ({ produtos }) => {
             disabled={currentPage === totalPages}
             className="page-btn"
           >
-            Próxima
+            {t('pagination.next', 'Próxima')}
           </button>
         </div>
       )}
     </div>
   );
 };
-
 
 export default ProductTable;

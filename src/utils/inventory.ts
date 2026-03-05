@@ -1,0 +1,34 @@
+// src/utils/inventory.ts
+
+// Define the product interface based on db_utils.ts and python script
+// Supports both old format (Und, ST) and new format (unitOut, csosn, elo)
+export interface Product {
+  code: string;
+  barcode: string;
+  description: string;
+  unitOut?: string;
+  unit?: string;
+  supplier: string;
+  quantity: number;
+  costPrice: number;
+  profitMargin: number;
+  salePrice: number;
+  csosn?: string;
+  st?: string;
+  elo?: string;
+}
+
+/**
+ * Withdraws a product from the stock.
+ * This is a placeholder and needs to be implemented with proper state management.
+ * @param code - The code of the product to withdraw.
+ * @param quantity - The quantity to withdraw.
+ * @returns An object with the status of the operation.
+ */
+export async function withdrawProduct(code: string, quantity: number): Promise<{ status: string }> {
+    // This function needs to be adapted to work in the browser context.
+    // It will likely involve updating the state in React rather than directly modifying files.
+    console.log(`Withdrawing ${quantity} of product ${code}`);
+    // Placeholder for now
+    return { status: 'ok' };
+}

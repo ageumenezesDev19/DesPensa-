@@ -1,0 +1,149 @@
+{
+  "app": {
+    "title": "DesPensa",
+    "darkMode": "Modo Escuro",
+    "lightMode": "Modo Claro",
+    "inventory": "Estoque",
+    "withdrawn": "Retirados",
+    "blacklist": "Lista Negra",
+    "clearAllData": "Limpar todos os dados",
+    "cancelSearch": "Cancelar Busca",
+    "madeBy": "Feito por Ageu M. Costa"
+  },
+  "migration": {
+    "prompt": "Este perfil ('{{name}}') possui dados em um formato antigo (Português). Você deseja migrar para o padrão atual (Inglês)?",
+    "confirm": "Sim, Migrar",
+    "ignore": "Agora não"
+  },
+  "search": {
+    "mode": "Modo de Busca",
+    "byName": "Buscar Produto por Nome",
+    "byPrice": "Buscar Unidade por Preço",
+    "byCombination": "Buscar Combinação por Preço",
+    "placeholder": "Pesquisar por nome do produto",
+    "placeholderPrice": "Pesquisar por preço (R$)",
+    "searching": "Buscando produtos...",
+    "resultsFound": "{{count}} Produtos Encontrados",
+    "resultFound": "Produto Encontrado",
+    "withdrawOne": "Retirar 1 unidade do estoque",
+    "btnWithdrawOne": "Retirar 1",
+    "searchAgain": "Buscar novamente",
+    "recalculate": "Recalcular",
+    "combinationFound": "Combinação Encontrada",
+    "withdrawQuantity": "Retirar",
+    "subtotal": "Subtotal",
+    "btnWithdrawCombination": "Retirar Combinação",
+    "searchAnother": "Buscar outra",
+    "copyName": "Copiar nome do produto",
+    "notFound": "Nenhum produto ou combinação encontrada.",
+    "invalidPrice": "Preço inválido para busca de combinação.",
+    "cancelled": "Busca cancelada."
+  },
+  "inventory": {
+    "importHtml": "Importar produtos.html",
+    "importPrompt": "Por favor, importe o arquivo `products.html` para começar.",
+    "emptyState": "Nenhum produto em estoque.",
+    "stockTitle": "Produtos em Estoque",
+    "table": {
+      "code": "Código",
+      "description": "Descrição",
+      "quantity": "Qtd.",
+      "unit": "Unid.",
+      "price": "Preço"
+    },
+    "notifications": {
+      "loadSuccess": "Produtos carregados com sucesso!",
+      "replaceSuccess": "Estoque substituído com sucesso! ({{count}} produtos)",
+      "addSuccess": "Produtos adicionados ao estoque com sucesso! ({{count}} produtos)",
+      "loadError": "Erro ao carregar produtos.",
+      "withdrawnLoadSuccess": "Retirados carregados com sucesso!",
+      "withdrawnLoadError": "Erro ao carregar retirados.",
+      "blacklistLoadSuccess": "Lista Negra carregada com sucesso!",
+      "blacklistLoadError": "Erro ao carregar a lista negra.",
+      "fileSaved": "{{filename}} salvo com sucesso!",
+      "fileSaveError": "Erro ao salvar arquivo.",
+      "productWithdrawn": "Produto {{name}} retirado do estoque.",
+      "itemsWithdrawn": "{{count}} itens retirados do estoque.",
+      "itemReturned": "Item retornado ao estoque.",
+      "productDeleted": "Produto removido temporariamente.",
+      "productPermanentlyDeleted": "Produto {{name}} removido do estoque em definitivo.",
+      "productRestored": "Produto restaurado."
+    }
+  },
+  "withdrawn": {
+    "importCsv": "Importar retirados.csv",
+    "emptyDay": "Nenhum produto retirado neste dia.",
+    "dayTotal": "Total do Dia",
+    "history": "Histórico de Retiradas",
+    "total": "Total",
+    "table": {
+      "code": "Código",
+      "description": "Descrição",
+      "quantity": "Qtd.",
+      "price": "Preço",
+      "date": "Data",
+      "action": "Ação"
+    },
+    "revert": "Reverter",
+    "previousDay": "< Dia Anterior",
+    "nextDay": "Próximo Dia >"
+  },
+  "blacklist": {
+    "importTxt": "Importar lista_negra.txt",
+    "title": "Lista Negra",
+    "addTerm": "Adicionar termo",
+    "add": "Adicionar",
+    "remove": "Remover",
+    "added": "Termo '{{term}}' adicionado à lista negra.",
+    "removed": "Termo '{{term}}' removido da lista negra."
+  },
+  "profile": {
+    "manage": "Gerenciar Perfil",
+    "subtitle": "Alterne entre estoques ou gerencie backups",
+    "btnManage": "Gerenciar",
+    "modalTitle": "Gerenciar Perfis",
+    "yourProfiles": "Seus Perfis",
+    "active": "Ativo",
+    "edit": "Renomear perfil",
+    "backup": "Fazer backup deste perfil",
+    "delete": "Excluir perfil",
+    "cannotDelete": "Não é possível excluir este perfil",
+    "actions": "Ações",
+    "namePlaceholder": "Nome do novo perfil",
+    "create": "Criar Novo",
+    "or": "ou",
+    "restore": "Restaurar Backup",
+    "restoreHelp": "Restaure um arquivo .json salvo anteriormente.",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "deleteConfirm": "Tem certeza que deseja deletar o perfil \"{{name}}\"?",
+    "deleteWarning": "Todos os dados associados serão perdidos permanentemente.",
+    "confirmDelete": "Sim, Excluir",
+    "backupEmpty": "Backup do perfil \"{{name}}\" criado, mas o perfil está vazio.",
+    "backupSuccess": "Backup do perfil \"{{name}}\" criado com sucesso!"
+  },
+  "common": {
+    "confirm": "Confirmar",
+    "cancel": "Cancelar",
+    "add": "Adicionar",
+    "replace": "Substituir",
+    "errorReadingFile": "Erro ao ler o arquivo: {{error}}",
+    "undo": "Desfazer"
+  },
+  "clearData": {
+    "title": "O que você deseja apagar?",
+    "warning": "Esta ação é irreversível. Selecione o que deseja limpar:",
+    "clearInventory": "Apagar Estoque",
+    "clearWithdrawn": "Apagar Retirados",
+    "clearAll": "Apagar Tudo"
+  },
+  "import": {
+    "modeTitle": "Modo de Importação",
+    "modeQuestion": "Você deseja adicionar os produtos ao estoque existente ou substituir todo o estoque atual?"
+  },
+  "pagination": {
+    "previous": "Anterior",
+    "next": "Próxima",
+    "pageInfo": "Página {{current}} de {{total}}"
+  }
+}

@@ -86,14 +86,60 @@
       gap: 0.75rem;
 
       .result-item {
+        position: relative;
+        overflow: hidden;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 1rem 1.25rem; // Increased padding, especially horizontal
+        padding: 1rem 1.25rem 1rem 1.75rem; // Increased left padding to make room for slider
         background-color: var(--background-color);
         border-radius: 8px;
         border: 1px solid var(--border-color);
-        transition: background-color 0.2s;
+        transition: background-color 0.2s, opacity 0.3s ease, filter 0.3s ease;
+
+        &.is-deleted {
+          opacity: 0.5;
+          filter: grayscale(100%);
+          pointer-events: none;
+        }
+
+        .delete-slider {
+          position: absolute;
+          left: 0;
+          top: 0;
+          bottom: 0;
+          width: 6px;
+          background-color: #ff9800; // Orange stripe
+          transition: width 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.3s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          overflow: hidden;
+          z-index: 10;
+          pointer-events: auto;
+
+          svg {
+            color: white;
+            opacity: 0;
+            width: 20px;
+            height: 20px;
+            transition: opacity 0.2s ease;
+            transform: translateX(-10px);
+            transition: opacity 0.2s ease, transform 0.3s ease;
+          }
+
+          &:hover {
+            width: 50px;
+            background-color: #f44336; // Red on expand
+            
+            svg {
+              opacity: 1;
+              transform: translateX(0);
+              transition-delay: 0.1s;
+            }
+          }
+        }
 
         @media (max-width: 600px) {
           flex-direction: column;
@@ -148,6 +194,15 @@
       
       button {
         margin: 0; // Reset default button margins
+        transition: all 0.2s;
+        
+        &:disabled {
+          background-color: var(--border-color, #eaeaea);
+          color: var(--font-color, #666);
+          opacity: 0.6;
+          cursor: not-allowed;
+          box-shadow: none;
+        }
       }
     }
   }
@@ -201,4 +256,85 @@
     margin-top: 15px;
   }
 
+}
+
+// Global Toast Container (can sit outside .search-bar or break out of its parent's stacking context)
+.undo-toast-container {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  display: flex;
+  flex-direction: column-reverse; // Newest on top if appending, or adjust react logic
+  gap: 12px;
+  z-index: 9999;
+
+  .undo-toast {
+    background-color: var(--card-bg, #fff);
+    border: 1px solid var(--border-color, #eaeaea);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-width: 300px;
+    position: relative;
+    overflow: hidden;
+    animation: toast-slide-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+    .toast-content {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+
+      strong {
+        color: var(--font-color);
+        font-size: 0.95rem;
+      }
+
+      span {
+        color: var(--font-color);
+        opacity: 0.6;
+        font-size: 0.85rem;
+      }
+    }
+
+    .undo-btn {
+      background-color: transparent;
+      border: 1px solid var(--primary-color);
+      color: var(--primary-color);
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background-color: var(--primary-color);
+        color: white;
+      }
+    }
+
+    .progress-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 4px;
+      background-color: var(--primary-color);
+      width: 100%;
+      animation: progress-shrink 8s linear forwards;
+    }
+  }
+}
+
+@keyframes toast-slide-in {
+  from { transform: translateX(-120%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes progress-shrink {
+  from { width: 100%; }
+  to { width: 0%; }
 }

@@ -1,20 +1,22 @@
 import React, { useEffect, useRef } from "react";
-import { Produto } from "../utils/estoque";
+import { useTranslation } from 'react-i18next';
+import { Product } from "../utils/inventory";
 import AnimatedButton from "./AnimatedButton";
 import "../styles/SearchBar.scss";
-import { ProdutoComQuantidade } from "../context/EstoqueContext";
+import { ProductWithQuantity } from "../context/InventoryContext";
 import { SearchMode } from "../hooks/useSearch";
-import { useEstoqueContext } from "../context/EstoqueContext";
+import { useInventoryContext } from "../context/InventoryContext";
 
 const SearchBar: React.FC = () => {
+  const { t } = useTranslation();
   const {
-    produtos,
-    handleRetirarSingleProduct: onRetirar,
-    handleRetirarCombinacao: onRetirarCombinacao,
+    products,
+    handleWithdrawSingleProduct: onWithdraw,
+    handleWithdrawCombination: onWithdrawCombination,
     searchResult: result,
     setSearchResult: setResult,
-    preco,
-    setPreco,
+    price,
+    setPrice,
     searchMode,
     setSearchMode,
     handleSearch,
@@ -23,16 +25,23 @@ const SearchBar: React.FC = () => {
     handleCancelSearch: onCancelSearch,
     showCancel,
     focusSearchInput: focusInput,
-    setFocusSearchInput: setFocusInput
-  } = useEstoqueContext();
+    setFocusSearchInput: setFocusInput,
+    handleDeleteProduct,
+    handleRestoreProduct,
+    showNotification
+  } = useInventoryContext();
 
   const inputRef = useRef<HTMLInputElement>(null);
   const [copiedIndex, setCopiedIndex] = React.useState<number | null>(null);
   const [combPage, setCombPage] = React.useState<number>(1);
   const COMB_ITEMS_PER_PAGE = 4;
 
+  const [deletedCombinationItems, setDeletedCombinationItems] = React.useState<Set<string>>(new Set());
+  const [undoToasts, setUndoToasts] = React.useState<Array<{ id: string; product: any; timerId: ReturnType<typeof setTimeout> }>>([]);
+
   React.useEffect(() => {
     setCombPage(1);
+    setDeletedCombinationItems(new Set());
   }, [result]);
 
 
@@ -44,17 +53,17 @@ const SearchBar: React.FC = () => {
   }, [focusInput, setFocusInput]);
 
   const handleCopy = async (product: any, index: number) => {
-    const isFractional = product.quantidadeUtilizada % 1 !== 0;
-    const includeQuantity = isFractional || product.quantidadeUtilizada > 1;
+    const isFractional = product.usedQuantity % 1 !== 0;
+    const includeQuantity = isFractional || product.usedQuantity > 1;
     let quantityStr = '';
     if (includeQuantity) {
       if (isFractional) {
-        quantityStr = product.quantidadeUtilizada.toFixed(3).replace('.', ',');
+        quantityStr = product.usedQuantity.toFixed(3).replace('.', ',');
       } else {
-        quantityStr = product.quantidadeUtilizada.toString();
+        quantityStr = product.usedQuantity.toString();
       }
     }
-    const textToCopy = includeQuantity ? `${quantityStr}*${product.Descrição}` : product.Descrição;
+    const textToCopy = includeQuantity ? `${quantityStr}*${product.description}` : product.description;
     try {
       await navigator.clipboard.writeText(textToCopy);
       setCopiedIndex(index);
@@ -64,23 +73,54 @@ const SearchBar: React.FC = () => {
     }
   };
 
-  const handleRetirarClick = (produto: Produto) => {
-    onRetirar(produto);
+  const handleWithdrawClick = (product: Product) => {
+    onWithdraw(product);
     setResult(null);
   };
 
-  const handleRetirarCombinacaoClick = (combinacao: ProdutoComQuantidade[]) => {
-    onRetirarCombinacao(combinacao);
+  const handleWithdrawCombinationClick = (combination: ProductWithQuantity[]) => {
+    const validCombination = combination.filter(p => !deletedCombinationItems.has(p.code));
+    if (validCombination.length > 0) {
+      onWithdrawCombination(validCombination);
+    }
     setResult(null);
+  };
+
+  const triggerUndoToast = (product: any) => {
+    const toastId = Date.now().toString() + Math.random().toString();
+    
+    const timerId = setTimeout(() => {
+      setUndoToasts(prev => prev.filter(t => t.id !== toastId));
+      showNotification(t('inventory.notifications.productPermanentlyDeleted', { name: product.description, defaultValue: `Produto ${product.description} removido em definitivo.` }));
+    }, 8000);
+
+    setUndoToasts(prev => [...prev, { id: toastId, product, timerId }]);
+  };
+
+  const handleDeleteComboItem = (product: any) => {
+    handleDeleteProduct(product);
+    setDeletedCombinationItems(prev => new Set(prev).add(product.code));
+    triggerUndoToast(product);
+  };
+
+  const handleUndoComboItem = (toastId: string, product: any, timerId: ReturnType<typeof setTimeout>) => {
+    clearTimeout(timerId);
+    handleRestoreProduct(product);
+    setDeletedCombinationItems(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(product.code);
+      return newSet;
+    });
+    setUndoToasts(prev => prev.filter(t => t.id !== toastId));
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       if (result && result.status === 'ok') {
-        if ((searchMode === 'produto_preco' || searchMode === 'produto_nome') && result.produtos && result.produtos.length > 0) {
-          handleRetirarClick(result.produtos[0]);
-        } else if (searchMode === 'combinacao' && result.combinacao) {
-          handleRetirarCombinacaoClick(result.combinacao);
+        if ((searchMode === 'product_price' || searchMode === 'product_name') && result.products && result.products.length > 0) {
+          handleWithdrawClick(result.products[0]);
+        } else if (searchMode === 'combination' && result.combination) {
+          handleWithdrawCombinationClick(result.combination);
         }
       } else {
         handleSearch(false);
@@ -90,11 +130,11 @@ const SearchBar: React.FC = () => {
 
   const getPlaceholder = () => {
     switch (searchMode) {
-      case 'combinacao':
-      case 'produto_preco':
-        return "Pesquisar por preço (R$)";
-      case 'produto_nome':
-        return "Pesquisar por nome do produto";
+      case 'combination':
+      case 'product_price':
+        return t('search.placeholderPrice', 'Pesquisar por preço (R$)');
+      case 'product_name':
+        return t('search.placeholder', 'Pesquisar por nome do produto');
       default:
         return "";
     }
@@ -105,11 +145,11 @@ const SearchBar: React.FC = () => {
       <div className="search-controls">
         <input
           ref={inputRef}
-          type={searchMode === 'produto_nome' ? "text" : "text"} // Using text for both for flexibility with comma
-          pattern={searchMode !== 'produto_nome' ? "[0-9,.]*" : undefined}
+          type={searchMode === 'product_name' ? "text" : "text"} // Using text for both for flexibility with comma
+          pattern={searchMode !== 'product_name' ? "[0-9,.]*" : undefined}
           placeholder={getPlaceholder()}
-          value={preco}
-          onChange={e => setPreco(e.target.value)}
+          value={price}
+          onChange={e => setPrice(e.target.value)}
           onKeyPress={handleKeyPress}
           disabled={!!searching}
         />
@@ -121,47 +161,47 @@ const SearchBar: React.FC = () => {
           }}
           disabled={!!searching}
         >
-          <option value="combinacao">Buscar Combinação</option>
-          <option value="produto_preco">Buscar Unidade por Preço</option>
-          <option value="produto_nome">Buscar Produto por Nome</option>
+          <option value="combination">{t('search.byCombination', 'Buscar Combinação')}</option>
+          <option value="product_price">{t('search.byPrice', 'Buscar Unidade por Preço')}</option>
+          <option value="product_name">{t('search.byName', 'Buscar Produto por Nome')}</option>
         </select>
-        <button onClick={() => handleSearch(false)} disabled={produtos.length === 0 || !preco || !!searching}>
-          Buscar
+        <button onClick={() => handleSearch(false)} disabled={products.length === 0 || !price || !!searching}>
+          {t('blacklist.add', 'Buscar')}
         </button>
       </div>
 
       {searching && (
         <div className="search-loading">
-          <span className="loader-inline" /> Buscando produtos...
+          <span className="loader-inline" /> {t('search.searching', 'Buscando produtos...')}
           {showCancel && (
             <button className="cancel-btn loading-cancel" onClick={onCancelSearch} type="button">
-              Cancelar
+              {t('app.cancelSearch', 'Cancelar')}
             </button>
           )}
         </div>
       )}
 
-      {produtos.length === 0 && <p>Por favor, importe o arquivo `produtos.html` para começar.</p>}
+      {products.length === 0 && <p>{t('inventory.importPrompt', 'Por favor, importe o arquivo `products.html` para começar.')}</p>}
 
-      {!searching && result && result.status === "ok" && (searchMode === 'produto_preco' || searchMode === 'produto_nome') && result.produtos && result.produtos.length > 0 && (
+      {!searching && result && result.status === "ok" && (searchMode === 'product_price' || searchMode === 'product_name') && result.products && result.products.length > 0 && (
         <div className="search-result-card animated-slideUp">
           <div className="result-header">
-            <h4>{result.produtos.length > 1 ? `${result.produtos.length} Produtos Encontrados` : "Produto Encontrado"}</h4>
+            <h4>{result.products.length > 1 ? t('search.resultsFound', { count: result.products.length, defaultValue: `${result.products.length} Produtos Encontrados` }) : t('search.resultFound', "Produto Encontrado")}</h4>
           </div>
           
           <ul className="result-list">
-            {result.produtos.map((p: any, i: number) => (
-              <li key={p.Código || i} className="result-item">
+            {result.products.map((p: any, i: number) => (
+              <li key={p.code || i} className="result-item">
                 <div className="item-info">
                   <span className="item-name">
-                    {p.Descrição}
+                    {p.description}
                   </span>
                   <div className="item-details">
                     <span className="item-price">
-                      Preço: <b>R$ {Number(p["Preço Venda"]).toFixed(2)}</b>
+                      {t('inventory.table.price', 'Preço')}: <b>R$ {Number(p.salePrice).toFixed(2)}</b>
                     </span>
                     <span className="item-stock">
-                      Estoque: {p.Quantidade} {p.Und}
+                      {t('app.inventory', 'Estoque')}: {p.quantity} {p.unit}
                     </span>
                   </div>
                 </div>
@@ -169,16 +209,16 @@ const SearchBar: React.FC = () => {
                 <div className="item-actions">
                   <button 
                     className="primary-btn small-btn" 
-                    onClick={() => handleRetirarClick(p)}
-                    title="Retirar 1 unidade do estoque"
+                    onClick={() => handleWithdrawClick(p)}
+                    title={t('search.withdrawOne', "Retirar 1 unidade do estoque")}
                     style={{ marginRight: '8px' }}
                   >
-                    Retirar 1
+                    {t('search.btnWithdrawOne', 'Retirar 1')}
                   </button>
                    <button
                     className={`icon-action-btn copy-btn ${copiedIndex === i ? 'copied' : ''}`}
                     onClick={() => handleCopy(p, i)}
-                    title="Copiar nome do produto"
+                    title={t('search.copyName', "Copiar nome do produto")}
                   >
                     {copiedIndex === i ? (
                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -192,42 +232,48 @@ const SearchBar: React.FC = () => {
           </ul>
 
           <div className="result-actions">
-            <AnimatedButton onClick={handleRecalculate} title="Buscar novamente" className="secondary-btn">
-              Recalcular
+            <AnimatedButton onClick={handleRecalculate} title={t('search.searchAgain', "Buscar novamente")} className="secondary-btn">
+              {t('search.recalculate', 'Recalcular')}
             </AnimatedButton>
           </div>
         </div>
       )}
-      {!searching && result && result.status === "ok" && searchMode === "combinacao" && result.combinacao && (
+      {!searching && result && result.status === "ok" && searchMode === "combination" && result.combination && (
         <div className="search-result-card">
           <div className="result-header">
-            <h4>Combinação Encontrada</h4>
+            <h4>{t('search.combinationFound', 'Combinação Encontrada')}</h4>
             <span className="total-price">
-              Total: <strong>R$ {result.combinacao.reduce((acc: number, p: any) => acc + p["Preço Venda"] * p.quantidadeUtilizada, 0).toFixed(2)}</strong>
+              {t('withdrawn.total', 'Total')}: <strong>R$ {result.combination.reduce((acc: number, p: any) => acc + (p.salePrice ?? 0) * p.usedQuantity, 0).toFixed(2)}</strong>
             </span>
           </div>
           
           <ul className="result-list">
-            {result.combinacao
+            {result.combination
               .slice((combPage - 1) * COMB_ITEMS_PER_PAGE, combPage * COMB_ITEMS_PER_PAGE)
               .map((p: any, i: number) => (
-              <li key={i} className="result-item">
+              <li key={i} className={`result-item ${deletedCombinationItems.has(p.code) ? 'is-deleted' : ''}`}>
+                <div className="delete-slider" onClick={() => !deletedCombinationItems.has(p.code) && handleDeleteComboItem(p)}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                </div>
                 <div className="item-info">
                   <span className="item-name">
-                    {p.Descrição}
+                    {p.description}
                   </span>
                   <div className="item-details">
                     <span className="item-quantity">
-                      Retirar: {(p['Und.Sai.'] === 'KG' || p['Und.Sai.'] === 'SC') ? p.quantidadeUtilizada.toFixed(3) : p.quantidadeUtilizada} {p['Und.Sai.']} 
+                      {t('search.withdrawQuantity', 'Retirar')}: {(p.unitOut === 'KG' || p.unitOut === 'SC') ? p.usedQuantity.toFixed(3) : p.usedQuantity} {p.unitOut} 
                       <span style={{ fontSize: '0.9em', color: '#666', marginLeft: '8px' }}>
-                        (Estoque: {p.Quantidade})
+                        ({t('app.inventory', 'Estoque')}: {p.quantity})
                       </span>
                     </span>
                     <span className="item-price">
-                      R$ {Number(p["Preço Venda"]).toFixed(2)}
+                      R$ {Number(p.salePrice).toFixed(2)}
                     </span>
                     <span className="item-total">
-                      Subtotal: <b>R$ {(Number(p["Preço Venda"]) * p.quantidadeUtilizada).toFixed(2)}</b>
+                      {t('search.subtotal', 'Subtotal')}: <b>R$ {(Number(p.salePrice) * p.usedQuantity).toFixed(2)}</b>
                     </span>
                   </div>
                 </div>
@@ -236,7 +282,7 @@ const SearchBar: React.FC = () => {
                    <button
                     className={`icon-action-btn copy-btn ${copiedIndex === i ? 'copied' : ''}`}
                     onClick={() => handleCopy(p, i)}
-                    title="Copiar nome do produto"
+                    title={t('search.copyName', "Copiar nome do produto")}
                   >
                     {copiedIndex === i ? (
                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -249,7 +295,7 @@ const SearchBar: React.FC = () => {
             ))}
           </ul>
           
-          {result.combinacao.length > COMB_ITEMS_PER_PAGE && (
+          {result.combination.length > COMB_ITEMS_PER_PAGE && (
             <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '1rem', marginBottom: '1rem' }}>
               <button 
                 className="secondary-btn small-btn" 
@@ -257,35 +303,57 @@ const SearchBar: React.FC = () => {
                 onClick={() => setCombPage(prev => prev - 1)}
                 style={{ padding: '4px 12px', fontSize: '0.9em' }}
               >
-                Anterior
+                {t('pagination.previous', 'Anterior')}
               </button>
               <span style={{ alignSelf: 'center', fontWeight: 'bold', fontSize: '0.95em' }}>
-                Página {combPage} de {Math.ceil(result.combinacao.length / COMB_ITEMS_PER_PAGE)}
+                {t('pagination.pageInfo', { current: combPage, total: Math.ceil(result.combination.length / COMB_ITEMS_PER_PAGE), defaultValue: `Página ${combPage} de ${Math.ceil(result.combination.length / COMB_ITEMS_PER_PAGE)}` })}
               </span>
               <button 
                 className="secondary-btn small-btn" 
-                disabled={combPage === Math.ceil(result.combinacao.length / COMB_ITEMS_PER_PAGE)} 
+                disabled={combPage === Math.ceil(result.combination.length / COMB_ITEMS_PER_PAGE)} 
                 onClick={() => setCombPage(prev => prev + 1)}
                 style={{ padding: '4px 12px', fontSize: '0.9em' }}
               >
-                Próxima
+                {t('pagination.next', 'Próxima')}
               </button>
             </div>
           )}
 
           <div className="result-actions">
-            <button className="primary-btn" onClick={() => handleRetirarCombinacaoClick(result.combinacao!)}>
-              Retirar Combinação
+            <button 
+              className="primary-btn" 
+              onClick={() => handleWithdrawCombinationClick(result.combination!)}
+              disabled={deletedCombinationItems.size > 0}
+              title={deletedCombinationItems.size > 0 ? t('search.recalculate', 'Recalcular') : ''}
+            >
+              {t('search.btnWithdrawCombination', 'Retirar Combinação')}
             </button>
-            <AnimatedButton onClick={handleRecalculate} title="Buscar outra combinação" className="secondary-btn">
-              Recalcular
+            <AnimatedButton onClick={handleRecalculate} title={t('search.searchAnother', "Buscar outra combinação")} className="secondary-btn">
+              {t('search.recalculate', 'Recalcular')}
             </AnimatedButton>
           </div>
         </div>
       )}
       {!searching && result && result.status !== "ok" && (
         <div className="search-result">
-          <p>Nenhum produto ou combinação encontrada.</p>
+          <p>{t('search.notFound', 'Nenhum produto ou combinação encontrada.')}</p>
+        </div>
+      )}
+
+      {undoToasts.length > 0 && (
+        <div className="undo-toast-container">
+          {undoToasts.map(toast => (
+            <div key={toast.id} className="undo-toast">
+              <div className="toast-content">
+                <strong>{t('inventory.notifications.productDeleted', 'Produto removido temporariamente.')}</strong>
+                <span>{toast.product.description}</span>
+              </div>
+              <button className="undo-btn" onClick={() => handleUndoComboItem(toast.id, toast.product, toast.timerId)}>
+                {t('common.undo', 'Desfazer')}
+              </button>
+              <div className="progress-bar"></div>
+            </div>
+          ))}
         </div>
       )}
     </div>

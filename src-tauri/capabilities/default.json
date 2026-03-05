@@ -6,6 +6,11 @@
     "main"
   ],
   "permissions": [
-    "core:default"
+    "core:default",
+    "fs:default",
+    "dialog:default",
+    "fs:allow-applocaldata-read-recursive",
+    "fs:allow-applocaldata-write-recursive",
+    "fs:create-app-specific-dirs"
   ]
 }
