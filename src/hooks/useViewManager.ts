@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from 'react';
 
-export type View = 'produtos' | 'retirados' | 'blacklist';
+export type View = 'inventory' | 'withdrawn' | 'blacklist';
 
 export const useViewManager = (initialView: View) => {
   const [view, setView] = useState<View>(initialView);
@@ -11,10 +10,10 @@ export const useViewManager = (initialView: View) => {
       if (e.metaKey || e.ctrlKey) {
         switch (e.key) {
           case '1':
-            setView('produtos');
+            setView('inventory');
             break;
           case '2':
-            setView('retirados');
+            setView('withdrawn');
             break;
           case '3':
             setView('blacklist');

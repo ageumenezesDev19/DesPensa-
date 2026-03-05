@@ -1,0 +1,149 @@
+{
+  "app": {
+    "title": "DesPensa",
+    "darkMode": "Dark Mode",
+    "lightMode": "Light Mode",
+    "inventory": "Inventory",
+    "withdrawn": "Withdrawn",
+    "blacklist": "Blacklist",
+    "clearAllData": "Clear all data",
+    "cancelSearch": "Cancel Search",
+    "madeBy": "Made by Ageu M. Costa"
+  },
+  "migration": {
+    "prompt": "This profile ('{{name}}') has data in a legacy format (Portuguese). Do you want to migrate it to the current standard (English)?",
+    "confirm": "Yes, Migrate",
+    "ignore": "Not now"
+  },
+  "search": {
+    "mode": "Search Mode",
+    "byName": "Search Product by Name",
+    "byPrice": "Search Unit by Price",
+    "byCombination": "Search Combination by Price",
+    "placeholder": "Search by product name",
+    "placeholderPrice": "Search by price (R$)",
+    "searching": "Searching products...",
+    "resultsFound": "{{count}} Products Found",
+    "resultFound": "Product Found",
+    "withdrawOne": "Withdraw 1 unit from stock",
+    "btnWithdrawOne": "Withdraw 1",
+    "searchAgain": "Search again",
+    "recalculate": "Recalculate",
+    "combinationFound": "Combination Found",
+    "withdrawQuantity": "Withdraw",
+    "subtotal": "Subtotal",
+    "btnWithdrawCombination": "Withdraw Combination",
+    "searchAnother": "Search another",
+    "copyName": "Copy product name",
+    "notFound": "No products or combinations found.",
+    "invalidPrice": "Invalid price for combination search.",
+    "cancelled": "Search cancelled."
+  },
+  "inventory": {
+    "importHtml": "Import products.html",
+    "importPrompt": "Please import the `products.html` file to start.",
+    "emptyState": "No products in stock.",
+    "stockTitle": "Products in Stock",
+    "table": {
+      "code": "Code",
+      "description": "Description",
+      "quantity": "Qty.",
+      "unit": "Unit",
+      "price": "Price"
+    },
+    "notifications": {
+      "loadSuccess": "Products loaded successfully!",
+      "replaceSuccess": "Stock replaced successfully! ({{count}} products)",
+      "addSuccess": "Products added to stock successfully! ({{count}} products)",
+      "loadError": "Error loading products.",
+      "withdrawnLoadSuccess": "Withdrawn loaded successfully!",
+      "withdrawnLoadError": "Error loading withdrawn.",
+      "blacklistLoadSuccess": "Blacklist loaded successfully!",
+      "blacklistLoadError": "Error loading blacklist.",
+      "fileSaved": "{{filename}} was saved successfully!",
+      "fileSaveError": "An error occurred while saving the file.",
+      "productWithdrawn": "Product {{name}} withdrawn from stock.",
+      "itemsWithdrawn": "{{count}} items withdrawn from stock.",
+      "itemReturned": "Item returned to stock.",
+      "productDeleted": "Product temporarily removed.",
+      "productPermanentlyDeleted": "Product {{name}} permanently removed from stock.",
+      "productRestored": "Product restored."
+    }
+  },
+  "withdrawn": {
+    "importCsv": "Import withdrawn.csv",
+    "emptyDay": "No products withdrawn on this day.",
+    "dayTotal": "Daily Total",
+    "history": "Withdrawal History",
+    "total": "Total",
+    "table": {
+      "code": "Code",
+      "description": "Description",
+      "quantity": "Qty.",
+      "price": "Price",
+      "date": "Date",
+      "action": "Action"
+    },
+    "revert": "Revert",
+    "previousDay": "< Previous Day",
+    "nextDay": "Next Day >"
+  },
+  "blacklist": {
+    "importTxt": "Import blacklist.txt",
+    "title": "Blacklist",
+    "addTerm": "Add term",
+    "add": "Add",
+    "remove": "Remove",
+    "added": "Term '{{term}}' added to blacklist.",
+    "removed": "Term '{{term}}' removed from blacklist."
+  },
+  "profile": {
+    "manage": "Manage Profile",
+    "subtitle": "Switch between inventories or manage backups",
+    "btnManage": "Manage",
+    "modalTitle": "Manage Profiles",
+    "yourProfiles": "Your Profiles",
+    "active": "Active",
+    "edit": "Rename profile",
+    "backup": "Backup this profile",
+    "delete": "Delete profile",
+    "cannotDelete": "Cannot delete this profile",
+    "actions": "Actions",
+    "namePlaceholder": "New profile name",
+    "create": "Create New",
+    "or": "or",
+    "restore": "Restore Backup",
+    "restoreHelp": "Restore a previously saved .json file.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "deleteConfirm": "Are you sure you want to delete profile \"{{name}}\"?",
+    "deleteWarning": "All associated data will be permanently lost.",
+    "confirmDelete": "Yes, Delete",
+    "backupEmpty": "Backup of profile \"{{name}}\" created, but profile is empty.",
+    "backupSuccess": "Backup of profile \"{{name}}\" created successfully!"
+  },
+  "common": {
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "add": "Add",
+    "replace": "Replace",
+    "errorReadingFile": "Error reading file: {{error}}",
+    "undo": "Undo"
+  },
+  "clearData": {
+    "title": "What do you want to delete?",
+    "warning": "This action is irreversible. Select what you want to clear:",
+    "clearInventory": "Delete Inventory",
+    "clearWithdrawn": "Delete Withdrawn",
+    "clearAll": "Delete All"
+  },
+  "import": {
+    "modeTitle": "Import Mode",
+    "modeQuestion": "Do you want to add the products to the existing stock or replace the current stock?"
+  },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "pageInfo": "Page {{current}} of {{total}}"
+  }
+}

@@ -1,12 +1,35 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import { hasPortugueseData, migrateProfileData } from '../utils/migration';
 
 const PROFILES_KEY = 'user_profiles';
 const ACTIVE_PROFILE_KEY = 'active_user_profile';
 const DEFAULT_PROFILE = 'Default';
-const PROFILE_DATA_KEYS = ['produtos', 'retirados', 'blacklist'];
+const PROFILE_DATA_KEYS = ['products', 'withdrawn', 'blacklist'];
 
 // Helper to trigger file download
-const downloadFile = (filename: string, content: string) => {
+const downloadFile = async (filename: string, content: string) => {
+  const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+  
+  if (isTauri) {
+    try {
+      const { save } = await import('@tauri-apps/plugin-dialog');
+      const { writeTextFile } = await import('@tauri-apps/plugin-fs');
+      
+      const filePath = await save({
+        defaultPath: filename,
+        filters: [{ name: 'JSON Backup', extensions: ['json'] }]
+      });
+      
+      if (filePath) {
+        await writeTextFile(filePath, content);
+      }
+      return;
+    } catch (err) {
+      console.warn("Tauri save failed, falling back to web download:", err);
+    }
+  }
+  
   try {
     const blob = new Blob([content], { type: 'application/json;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -18,8 +41,7 @@ const downloadFile = (filename: string, content: string) => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   } catch (error) {
-    console.error("Erro ao salvar o arquivo:", error);
-    alert("Ocorreu um erro ao salvar o arquivo.");
+    console.error("Error saving file:", error);
   }
 };
 
@@ -29,6 +51,7 @@ const getProfiledKey = (profile: string, key: string): string => {
 };
 
 export function useProfiles() {
+  const { t } = useTranslation();
   const [profiles, setProfiles] = useState<string[]>([]);
   const [activeProfile, setActiveProfileState] = useState<string>(DEFAULT_PROFILE);
 
@@ -44,13 +67,21 @@ export function useProfiles() {
       }
       setProfiles(parsedProfiles);
 
+      let initialActive = DEFAULT_PROFILE;
       if (storedActiveProfile && parsedProfiles.includes(storedActiveProfile)) {
-        setActiveProfileState(storedActiveProfile);
+        initialActive = storedActiveProfile;
       } else {
         const newActive = parsedProfiles[0];
-        setActiveProfileState(newActive);
+        initialActive = newActive;
         window.localStorage.setItem(ACTIVE_PROFILE_KEY, newActive);
       }
+      setActiveProfileState(initialActive);
+
+      // check if initial active profile has Portuguese data
+      if (hasPortugueseData(initialActive)) {
+        migrateProfileData(initialActive);
+      }
+
     } catch (error) {
       console.error("Failed to load profiles from localStorage.", error);
       setProfiles([DEFAULT_PROFILE]);
@@ -58,7 +89,7 @@ export function useProfiles() {
       window.localStorage.setItem(PROFILES_KEY, JSON.stringify([DEFAULT_PROFILE]));
       window.localStorage.setItem(ACTIVE_PROFILE_KEY, DEFAULT_PROFILE);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     refreshProfiles();
@@ -67,6 +98,11 @@ export function useProfiles() {
   const setActiveProfile = useCallback((profileName: string) => {
     if (profiles.includes(profileName)) {
       try {
+        // Check for migration before switching
+        if (hasPortugueseData(profileName)) {
+            migrateProfileData(profileName);
+        }
+
         window.localStorage.setItem(ACTIVE_PROFILE_KEY, profileName);
         setActiveProfileState(profileName);
         window.dispatchEvent(new CustomEvent('profileChanged'));
@@ -74,14 +110,13 @@ export function useProfiles() {
         console.error(`Failed to set active profile to "${profileName}".`, error);
       }
     }
-  }, [profiles]);
+  }, [profiles, t]);
 
   const createProfile = useCallback((profileName: string) => {
     if (profileName && !profiles.includes(profileName)) {
       try {
         const newProfiles = [...profiles, profileName];
         window.localStorage.setItem(PROFILES_KEY, JSON.stringify(newProfiles));
-        alert(`Perfil "${profileName}" criado com sucesso! A aplicação será recarregada.`);
         window.location.reload();
       } catch (error) {
         console.error(`Failed to create new profile "${profileName}".`, error);
@@ -91,11 +126,9 @@ export function useProfiles() {
 
   const deleteProfile = useCallback((profileNameToDelete: string) => {
     if (profileNameToDelete === DEFAULT_PROFILE) {
-      alert('Não é possível deletar o perfil padrão.');
       return;
     }
     if (profileNameToDelete === activeProfile) {
-      alert('Não é possível deletar o perfil ativo. Mude de perfil primeiro.');
       return;
     }
     try {
@@ -104,58 +137,65 @@ export function useProfiles() {
       });
       const newProfiles = profiles.filter(p => p !== profileNameToDelete);
       window.localStorage.setItem(PROFILES_KEY, JSON.stringify(newProfiles));
-      alert(`Perfil "${profileNameToDelete}" deletado com sucesso! A aplicação será recarregada.`);
       window.location.reload();
     } catch (error) {
       console.error(`Failed to delete profile "${profileNameToDelete}".`, error);
     }
   }, [profiles, activeProfile]);
 
-  const backupProfile = useCallback((profileNameToBackup: string): { success: boolean; isEmpty: boolean } => {
+  const backupProfile = useCallback(async (profileNameToBackup: string): Promise<{ success: boolean; isEmpty: boolean }> => {
     try {
       let totalItems = 0;
       const backupData: { [key: string]: any } = {};
       
-      PROFILE_DATA_KEYS.forEach(key => {
+      const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+      
+      for (const key of PROFILE_DATA_KEYS) {
         const storageKey = getProfiledKey(profileNameToBackup, key);
-        
-        // Check for chunked data first (handling large datasets)
-        const partsMeta = window.localStorage.getItem(`${storageKey}_parts`);
         let data: any = null;
 
-        if (partsMeta) {
+        if (isTauri) {
           try {
-            const partsCount = Number(partsMeta);
-            const items: any[] = [];
-            for (let i = 0; i < partsCount; i++) {
-              const part = window.localStorage.getItem(`${storageKey}_part_${i}`);
-              if (part) {
-                const parsedPart = JSON.parse(part);
-                if (Array.isArray(parsedPart)) {
-                  items.push(...parsedPart);
-                } else {
-                  items.push(parsedPart);
+            const fs = await import('@tauri-apps/plugin-fs');
+            const fileExists = await fs.exists(`${storageKey}.json`, { baseDir: fs.BaseDirectory.AppLocalData });
+            if (fileExists) {
+              const fileContent = await fs.readTextFile(`${storageKey}.json`, { baseDir: fs.BaseDirectory.AppLocalData });
+              data = JSON.parse(fileContent);
+            }
+          } catch (e) {
+            console.warn(`[Backup] Tauri FS read failed for ${key}, trying localStorage`, e);
+          }
+        }
+        
+        // Fallback to localStorage
+        if (!data) {
+          const partsMeta = window.localStorage.getItem(`${storageKey}_parts`);
+          if (partsMeta) {
+            try {
+              const partsCount = Number(partsMeta);
+              const items: any[] = [];
+              for (let i = 0; i < partsCount; i++) {
+                const part = window.localStorage.getItem(`${storageKey}_part_${i}`);
+                if (part) {
+                  const parsedPart = JSON.parse(part);
+                  if (Array.isArray(parsedPart)) items.push(...parsedPart);
+                  else items.push(parsedPart);
                 }
               }
+              data = items;
+            } catch (e) {
+              console.warn(`[Backup] Failed to reconstruct chunks for ${key}`, e);
             }
-            data = items;
-            console.log(`[Backup] Reconstructed ${key} from ${partsCount} chunks. Total items: ${items.length}`);
-          } catch (e) {
-            console.warn(`[Backup] Failed to reconstruct chunks for ${key}`, e);
+          }
+          if (!data) {
+            const item = window.localStorage.getItem(storageKey);
+            data = item ? JSON.parse(item) : [];
           }
         }
 
-        // Fallback to single key if no chunks or reconstruction failed
-        if (!data) {
-          const item = window.localStorage.getItem(storageKey);
-          data = item ? JSON.parse(item) : [];
-        }
-
         backupData[key] = data;
-        if (Array.isArray(data)) {
-          totalItems += data.length;
-        }
-      });
+        if (Array.isArray(data)) totalItems += data.length;
+      }
 
       const backupObject = {
         profileName: profileNameToBackup,
@@ -164,7 +204,7 @@ export function useProfiles() {
       };
 
       const date = new Date().toISOString().split('T')[0];
-      downloadFile(`backup-${profileNameToBackup}-${date}.json`, JSON.stringify(backupObject, null, 2));
+      await downloadFile(`backup-${profileNameToBackup}-${date}.json`, JSON.stringify(backupObject, null, 2));
       return { success: true, isEmpty: totalItems === 0 };
     } catch (error) {
       console.error(`Failed to backup profile "${profileNameToBackup}".`, error);
@@ -172,20 +212,33 @@ export function useProfiles() {
     }
   }, []);
 
-  const restoreProfile = useCallback((backupContent: string) => {
+  const restoreProfile = useCallback(async (backupContent: string) => {
     try {
       const backupObject = JSON.parse(backupContent);
       const profileNameFromBackup = backupObject.profileName;
 
       if (!backupObject.data || !profileNameFromBackup) {
-        throw new Error("Arquivo de backup inválido ou corrompido.");
+        throw new Error("Invalid or corrupted backup file.");
       }
 
       const profileExists = profiles.includes(profileNameFromBackup);
       let confirmation = true;
 
+      // Handle legacy Portuguese keys in backup
+      const mappedData: { [key: string]: any } = {};
+      const ptToEn: { [key: string]: string } = {
+          'produtos': 'products',
+          'retirados': 'withdrawn',
+          'blacklist': 'blacklist'
+      };
+
+      Object.keys(backupObject.data).forEach(key => {
+          const enKey = ptToEn[key] || key;
+          mappedData[enKey] = backupObject.data[key];
+      });
+
       if (profileExists) {
-        confirmation = window.confirm(`Um perfil chamado "${profileNameFromBackup}" já existe. Deseja sobrescrevê-lo com os dados do backup?\n\nAVISO: Todos os dados atuais do perfil "${profileNameFromBackup}" serão substituídos.`);
+        confirmation = window.confirm(t('profile.deleteConfirm', { name: profileNameFromBackup }));
       }
 
       if (!confirmation) return;
@@ -195,57 +248,78 @@ export function useProfiles() {
         window.localStorage.setItem(PROFILES_KEY, JSON.stringify(newProfiles));
       }
 
-      PROFILE_DATA_KEYS.forEach(key => {
-        if (backupObject.data[key]) {
-          window.localStorage.setItem(getProfiledKey(profileNameFromBackup, key), JSON.stringify(backupObject.data[key]));
+      const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+      
+      for (const key of PROFILE_DATA_KEYS) {
+        if (mappedData[key]) {
+          if (isTauri) {
+            try {
+              const fs = await import('@tauri-apps/plugin-fs');
+              await fs.writeTextFile(
+                `${getProfiledKey(profileNameFromBackup, key)}.json`,
+                JSON.stringify(mappedData[key]),
+                { baseDir: fs.BaseDirectory.AppLocalData }
+              );
+            } catch (e) {
+              console.warn(`[Restore] Tauri FS write failed for ${key}, writing to localStorage`, e);
+              window.localStorage.setItem(getProfiledKey(profileNameFromBackup, key), JSON.stringify(mappedData[key]));
+            }
+          } else {
+            window.localStorage.setItem(getProfiledKey(profileNameFromBackup, key), JSON.stringify(mappedData[key]));
+          }
         }
-      });
+      }
 
-      alert(`Perfil "${profileNameFromBackup}" foi restaurado com sucesso! A aplicação será recarregada.`);
       window.location.reload();
 
     } catch (error) {
-      alert("Falha ao restaurar o backup. Verifique o arquivo selecionado.");
       console.error(`Failed to restore profile.`, error);
     }
-  }, [profiles]);
+  }, [profiles, t]);
 
-  const editProfileName = useCallback((oldName: string, newName: string) => {
+  const editProfileName = useCallback(async (oldName: string, newName: string) => {
     if (!newName || oldName === newName) return;
-    if (oldName === DEFAULT_PROFILE) {
-      alert('Não é possível renomear o perfil padrão.');
-      return;
-    }
-    if (profiles.includes(newName)) {
-      alert(`Um perfil com o nome "${newName}" já existe.`);
-      return;
-    }
+    if (oldName === DEFAULT_PROFILE) return;
+    if (profiles.includes(newName)) return;
 
     try {
-      // Move data to new keys
-      PROFILE_DATA_KEYS.forEach(key => {
+      const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+      
+      for (const key of PROFILE_DATA_KEYS) {
+        if (isTauri) {
+          try {
+            const fs = await import('@tauri-apps/plugin-fs');
+            const oldFile = `${getProfiledKey(oldName, key)}.json`;
+            const newFile = `${getProfiledKey(newName, key)}.json`;
+            const oldExists = await fs.exists(oldFile, { baseDir: fs.BaseDirectory.AppLocalData });
+            if (oldExists) {
+              const content = await fs.readTextFile(oldFile, { baseDir: fs.BaseDirectory.AppLocalData });
+              await fs.writeTextFile(newFile, content, { baseDir: fs.BaseDirectory.AppLocalData });
+              await fs.remove(oldFile, { baseDir: fs.BaseDirectory.AppLocalData });
+            }
+          } catch (e) {
+            console.warn(`[Rename] Tauri FS rename failed for ${key}, using localStorage`, e);
+          }
+        }
+        // Also migrate localStorage keys (web fallback)
         const data = window.localStorage.getItem(getProfiledKey(oldName, key));
         if (data) {
           window.localStorage.setItem(getProfiledKey(newName, key), data);
           window.localStorage.removeItem(getProfiledKey(oldName, key));
         }
-      });
+      }
 
-      // Update profile list
       const newProfiles = profiles.map(p => (p === oldName ? newName : p));
       window.localStorage.setItem(PROFILES_KEY, JSON.stringify(newProfiles));
 
-      // Update active profile if it was the one being edited
       if (activeProfile === oldName) {
         window.localStorage.setItem(ACTIVE_PROFILE_KEY, newName);
       }
 
-      alert(`Perfil "${oldName}" foi renomeado para "${newName}". A aplicação será recarregada.`);
       window.location.reload();
 
     } catch (error) {
       console.error(`Failed to rename profile "${oldName}".`, error);
-      alert("Ocorreu um erro ao renomear o perfil.");
     }
   }, [profiles, activeProfile]);
 

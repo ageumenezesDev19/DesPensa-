@@ -1,21 +1,20 @@
-
 import { useState, useEffect } from 'react';
-import { Produto } from '../utils/estoque';
-import { buscarProdutoProximo } from '../utils/busca';
-import { ProdutoComQuantidade } from '../context/EstoqueContext';
+import { Product } from '../utils/inventory';
+import { searchNearbyProduct } from '../utils/search';
+import { ProductWithQuantity } from '../context/InventoryContext';
 
-export type SearchMode = 'combinacao' | 'produto_preco' | 'produto_nome';
+export type SearchMode = 'combination' | 'product_price' | 'product_name';
 
 interface SearchProps {
-  produtos: Produto[];
+  products: Product[];
   blacklist: string[];
-  preco: string;
+  price: string;
   searchMode: SearchMode;
   showNotification: (message: string) => void;
 }
 
-export const useSearch = ({ produtos, blacklist, preco, searchMode, showNotification }: SearchProps) => {
-  const [searchResult, setSearchResult] = useState<{ status: string; produtos?: Produto[]; combinacao?: ProdutoComQuantidade[] } | null>(null);
+export const useSearch = ({ products, blacklist, price, searchMode, showNotification }: SearchProps) => {
+  const [searchResult, setSearchResult] = useState<{ status: string; products?: Product[]; combination?: ProductWithQuantity[] } | null>(null);
   const [searching, setSearching] = useState(false);
   const [searchCancelled, setSearchCancelled] = useState(false);
   const [showCancel, setShowCancel] = useState(false);
@@ -43,10 +42,10 @@ export const useSearch = ({ produtos, blacklist, preco, searchMode, showNotifica
 
     const newPreviouslyFound = new Set(previouslyFound);
 
-    if (searchResult.combinacao) {
-      searchResult.combinacao.forEach((p: Produto) => newPreviouslyFound.add(p.Código));
-    } else if (searchResult.produtos) {
-      searchResult.produtos.forEach((p: Produto) => newPreviouslyFound.add(p.Código));
+    if (searchResult.combination) {
+      searchResult.combination.forEach((p: Product) => newPreviouslyFound.add(p.code));
+    } else if (searchResult.products) {
+      searchResult.products.forEach((p: Product) => newPreviouslyFound.add(p.code));
     }
 
     setPreviouslyFound(newPreviouslyFound);
@@ -54,7 +53,7 @@ export const useSearch = ({ produtos, blacklist, preco, searchMode, showNotifica
   };
 
   const handleSearch = async (isRecalculation = false, previouslyFoundSet: Set<string> | null = null) => {
-    if (!preco) return;
+    if (!price) return;
 
     if (!isRecalculation) {
       setPreviouslyFound(new Set());
@@ -69,20 +68,20 @@ export const useSearch = ({ produtos, blacklist, preco, searchMode, showNotifica
       return;
     }
 
-    if (searchMode === 'produto_nome' || searchMode === 'produto_preco') {
-      let produtosEncontrados: Produto[] = [];
+    if (searchMode === 'product_name' || searchMode === 'product_price') {
+      let foundProducts: Product[] = [];
 
-      if (searchMode === 'produto_nome') {
-        const searchTerm = preco.toLowerCase();
-        produtosEncontrados = produtos.filter(p => {
-          const isBlacklisted = blacklist.some((term: string) => p.Descrição.toLowerCase().includes(term.toLowerCase()) || p.Código.toLowerCase().includes(term.toLowerCase()));
-          return p.Descrição.toLowerCase().includes(searchTerm) && !isBlacklisted;
+      if (searchMode === 'product_name') {
+        const searchTerm = price.toLowerCase();
+        foundProducts = products.filter(p => {
+          const isBlacklisted = blacklist.some((term: string) => p.description.toLowerCase().includes(term.toLowerCase()) || p.code.toLowerCase().includes(term.toLowerCase()));
+          return p.description.toLowerCase().includes(searchTerm) && !isBlacklisted;
         }).slice(0, 20); // Limit to 20 results
-      } else { // produto_preco
-        const precoDesejado = Number(preco.replace(',', '.'));
-        const produtoEncontrado = buscarProdutoProximo(produtos, precoDesejado, blacklist);
-        if (produtoEncontrado) {
-          produtosEncontrados = [produtoEncontrado];
+      } else { // product_price
+        const desiredPrice = Number(price.replace(',', '.'));
+        const foundProduct = searchNearbyProduct(products, desiredPrice, blacklist);
+        if (foundProduct) {
+          foundProducts = [foundProduct];
         }
       }
 
@@ -90,14 +89,14 @@ export const useSearch = ({ produtos, blacklist, preco, searchMode, showNotifica
         setSearching(false);
         return;
       }
-      if (produtosEncontrados.length > 0) {
-        setSearchResult({ status: 'ok', produtos: produtosEncontrados });
+      if (foundProducts.length > 0) {
+        setSearchResult({ status: 'ok', products: foundProducts });
       } else {
         setSearchResult({ status: 'not_found' });
       }
-    } else { // searchMode === 'combinacao'
-      const precoDesejado = Number(preco.replace(',', '.'));
-      if (isNaN(precoDesejado)) {
+    } else { // searchMode === 'combination'
+      const desiredPrice = Number(price.replace(',', '.'));
+      if (isNaN(desiredPrice)) {
         showNotification("Preço inválido para busca de combinação.");
         setSearching(false);
         return;
@@ -111,23 +110,23 @@ export const useSearch = ({ produtos, blacklist, preco, searchMode, showNotifica
       // - exclude previously found and blacklisted
       // - require in-stock
       // - sort by price desc (no limit for super search)
-      const allProducts = produtos;
-      const afterPreviouslyFound = allProducts.filter(p => !currentPreviouslyFound.has(p.Código));
-      const afterStock = afterPreviouslyFound.filter(p => p.Quantidade >= 0.001);
-      const afterBlacklist = afterStock.filter(p => !blacklist.some(term => p.Descrição.toLowerCase().includes(term.toLowerCase()) || p.Código.toLowerCase().includes(term.toLowerCase())));
-      const afterPrice = afterBlacklist.filter(p => (p['Preço Venda'] ?? 0) > 0);
-      const produtosCandidatos = afterPrice.sort((a, b) => (b['Preço Venda'] ?? 0) - (a['Preço Venda'] ?? 0));
+      const allProducts = products;
+      const afterPreviouslyFound = allProducts.filter(p => !currentPreviouslyFound.has(p.code));
+      const afterStock = afterPreviouslyFound.filter(p => p.quantity >= 0.001);
+      const afterBlacklist = afterStock.filter(p => !blacklist.some(term => p.description.toLowerCase().includes(term.toLowerCase()) || p.code.toLowerCase().includes(term.toLowerCase())));
+      const afterPrice = afterBlacklist.filter(p => (p.salePrice ?? 0) > 0);
+      const candidates = afterPrice.sort((a, b) => (b.salePrice ?? 0) - (a.salePrice ?? 0));
 
-      console.log(`[useSearch] Filter breakdown: total=${allProducts.length}, afterPrevFound=${afterPreviouslyFound.length}, afterStock=${afterStock.length}, afterBlacklist=${afterBlacklist.length}, afterPrice=${afterPrice.length}, final=${produtosCandidatos.length}`);
+      console.log(`[useSearch] Filter breakdown: total=${allProducts.length}, afterPrevFound=${afterPreviouslyFound.length}, afterStock=${afterStock.length}, afterBlacklist=${afterBlacklist.length}, afterPrice=${afterPrice.length}, final=${candidates.length}`);
 
-      const produtosFiltrados = produtosCandidatos;
+      const filteredProducts = candidates;
 
-      console.log(`[useSearch] After filters: ${produtosFiltrados.length} candidates for ${precoDesejado}`);
+      console.log(`[useSearch] After filters: ${filteredProducts.length} candidates for ${desiredPrice}`);
 
       const worker = new Worker(new URL('../workers/combinationWorker.ts', import.meta.url), { type: 'module' });
-      let workerResult: ProdutoComQuantidade[] | null = null;
+      let workerResult: ProductWithQuantity[] | null = null;
 
-      const workerPromise = new Promise<ProdutoComQuantidade[] | null>((resolve) => {
+      const workerPromise = new Promise<ProductWithQuantity[] | null>((resolve) => {
         worker.onmessage = (event) => {
           const { type, result, error } = event.data;
           if (type === 'result') {
@@ -143,10 +142,10 @@ export const useSearch = ({ produtos, blacklist, preco, searchMode, showNotifica
         worker.postMessage({
           type: 'startSearch',
           payload: {
-            df: produtosFiltrados,
-            precoDesejado,
+            df: filteredProducts,
+            targetPrice: desiredPrice,
             tolerancia: 0.3,
-            usados: Array.from(currentPreviouslyFound),
+            used: Array.from(currentPreviouslyFound),
             blacklist,
           },
         });
@@ -171,9 +170,10 @@ export const useSearch = ({ produtos, blacklist, preco, searchMode, showNotifica
       }
 
       if (workerResult && workerResult.length > 0) {
-        const finalResult = workerResult.filter(p => p.quantidadeUtilizada >= 0.001);
+        const finalResult = workerResult.filter((p: any) => (p.usedQuantity ?? 0) >= 0.001);
+
         if (finalResult.length > 0) {
-          setSearchResult({ status: 'ok', combinacao: finalResult });
+          setSearchResult({ status: 'ok', combination: finalResult });
         } else {
           setSearchResult({ status: 'not_found' });
         }

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useProfiles } from '../hooks/useProfiles';
 import { ProfileManagementModal } from './ProfileManagementModal';
 import { CustomDropdown } from './CustomDropdown';
 import '../styles/CustomDropdown.scss';
 
 export const ProfileManager: React.FC = () => {
+  const { t } = useTranslation();
   const { profiles, activeProfile, setActiveProfile } = useProfiles();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -12,8 +14,8 @@ export const ProfileManager: React.FC = () => {
     <>
       <div className="profile-manager animated-fadein">
         <div className="profile-info">
-          <h3>Gerenciar Perfil</h3>
-          <p className="subtitle">Alterne entre estoques ou gerencie backups</p>
+          <h3>{t('profile.manage', 'Gerenciar Perfil')}</h3>
+          <p className="subtitle">{t('profile.subtitle', 'Alterne entre estoques ou gerencie backups')}</p>
         </div>
 
         <div className="profile-controls">
@@ -27,7 +29,7 @@ export const ProfileManager: React.FC = () => {
           
           <button className="manage-btn" onClick={() => setIsModalOpen(true)}>
             <span className="icon">⚙️</span>
-            Gerenciar
+            {t('profile.btnManage', 'Gerenciar')}
           </button>
         </div>
       </div>

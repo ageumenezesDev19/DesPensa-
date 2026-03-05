@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { addToBlacklist as addTerm, removeFromBlacklist as removeTerm } from "../utils/blacklist_utils";
 import "../styles/BlacklistManager.scss";
 
@@ -9,40 +10,41 @@ interface Props {
 }
 
 const BlacklistManager: React.FC<Props> = ({ blacklist, setBlacklist, showNotification }) => {
+  const { t } = useTranslation();
   const [termo, setTermo] = useState<string>("");
 
   const handleAdd = () => {
     if (!termo.trim()) return;
     setBlacklist(prev => addTerm(prev, termo));
+    showNotification(t('blacklist.added', { term: termo, defaultValue: `Termo '${termo}' adicionado à lista negra.` }));
     setTermo("");
-    showNotification(`Termo '${termo}' adicionado à blacklist.`);
   };
 
   const handleRemove = (termToRemove: string) => {
     setBlacklist(prev => removeTerm(prev, termToRemove));
-    showNotification(`Termo '${termToRemove}' removido da blacklist.`);
+    showNotification(t('blacklist.removed', { term: termToRemove, defaultValue: `Termo '${termToRemove}' removido da lista negra.` }));
   };
 
   return (
     <div className="blacklist-manager animated-fadein">
-      <h2>Blacklist</h2>
+      <h2>{t('blacklist.title', 'Blacklist')}</h2>
       <ul>
         {blacklist.map((term, i) => (
           <li key={i}>
             {term}
-            <button onClick={() => handleRemove(term)}>Remover</button>
+            <button onClick={() => handleRemove(term)}>{t('blacklist.remove', 'Remover')}</button>
           </li>
         ))}
       </ul>
       <div className="add-term">
         <input
           type="text"
-          placeholder="Adicionar termo"
+          placeholder={t('blacklist.addTerm', 'Adicionar termo')}
           value={termo}
           onChange={e => setTermo(e.target.value)}
           onKeyPress={e => e.key === 'Enter' && handleAdd()}
         />
-        <button onClick={handleAdd}>Adicionar</button>
+        <button onClick={handleAdd}>{t('blacklist.add', 'Adicionar')}</button>
       </div>
     </div>
   );

@@ -1,16 +1,18 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import FileUpload from '../components/FileUpload';
 import BlacklistManager from '../components/BlacklistManager';
-import { useEstoqueContext } from '../context/EstoqueContext';
+import { useInventoryContext } from '../context/InventoryContext';
 
 export const BlacklistView: React.FC = () => {
+  const { t } = useTranslation();
   const {
     blacklist,
     setBlacklist,
     setLoading,
     handleLoadBlacklist,
     showNotification
-  } = useEstoqueContext();
+  } = useInventoryContext();
 
 
   return (
@@ -19,7 +21,7 @@ export const BlacklistView: React.FC = () => {
         <FileUpload
           setLoading={setLoading}
           onFileUpload={(content) => handleLoadBlacklist(content)}
-          label="Importar blacklist.txt"
+          label={t('blacklist.importTxt', 'Importar blacklist.txt')}
           accept=".txt"
         />
       </div>

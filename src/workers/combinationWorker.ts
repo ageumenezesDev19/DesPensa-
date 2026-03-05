@@ -1,11 +1,11 @@
 // src/workers/combinationWorker.ts
 
 interface Product {
-  COD: string;
-  NOME: string;
-  PRECO: number;
-  TIPO: 'UND' | 'KG' | 'SC';
-  estoque: number;
+  code: string;
+  name: string;
+  price: number;
+  type: 'UND' | 'KG' | 'SC';
+  inventory: number;
 }
 
 interface Combination {
@@ -23,8 +23,8 @@ const calculateTotalInCents = (
 ): number => {
   let total = 0;
   for (const product of combination) {
-    const qty = quantity[product.COD] || 0;
-    const priceCents = productsInCents.get(product.COD) || 0;
+    const qty = quantity[product.code] || 0;
+    const priceCents = productsInCents.get(product.code) || 0;
     total += Math.round(priceCents * qty);
   }
   return total;
@@ -39,7 +39,7 @@ const findCombinationHeuristic = (
 ): Combination | null => {
   const targetCents = Math.round(targetPrice * 100);
   const productsInCents = new Map<string, number>();
-  products.forEach(p => productsInCents.set(p.COD, Math.round(p.PRECO * 100)));
+  products.forEach(p => productsInCents.set(p.code, Math.round(p.price * 100)));
 
   let bestCombination: Combination | null = null;
   let minDiff = Infinity;
@@ -54,13 +54,13 @@ const findCombinationHeuristic = (
 
     for (const p of shuffledProducts) {
        if (remainingCents <= 0) break;
-       const priceCents = productsInCents.get(p.COD) || 0;
+       const priceCents = productsInCents.get(p.code) || 0;
        if (priceCents <= 0) continue;
 
-       const availStock = inventory[p.COD] || 0;
+       const availStock = inventory[p.code] || 0;
        
        let takeQty = 0;
-       if (p.TIPO === 'KG' || p.TIPO === 'SC') {
+       if (p.type === 'KG' || p.type === 'SC') {
           // Fractional
           const neededQty = remainingCents / priceCents;
           takeQty = Math.min(neededQty, availStock);
@@ -73,7 +73,7 @@ const findCombinationHeuristic = (
 
        if (takeQty >= 0.001) {
           currentCombo.push(p);
-          currentQuantity[p.COD] = takeQty;
+          currentQuantity[p.code] = takeQty;
           remainingCents -= Math.round(takeQty * priceCents);
        }
     }
@@ -93,11 +93,11 @@ const findCombinationHeuristic = (
   };
 
   // Iteration 1: pure descending price
-  const descProducts = [...products].sort((a, b) => b.PRECO - a.PRECO);
+  const descProducts = [...products].sort((a, b) => b.price - a.price);
   greedySearch(descProducts);
   
   // Iteration 2: pure ascending price
-  const ascProducts = [...products].sort((a, b) => a.PRECO - b.PRECO);
+  const ascProducts = [...products].sort((a, b) => a.price - b.price);
   greedySearch(ascProducts);
 
   // Iterations: Randomized greedy for up to timeoutMs
@@ -127,52 +127,52 @@ self.onmessage = (e: MessageEvent) => {
   const { type, payload } = e.data;
 
   if (type === 'startSearch') {
-    const { df, precoDesejado, blacklist } = payload;
+    const { df, targetPrice, blacklist } = payload;
 
     const productsRaw: Product[] = df.map((p: any) => {
-      const precoNum = typeof p['Preço Venda'] === 'string' ? parseFloat(p['Preço Venda'].replace(/\./g, '').replace(',', '.')) : Number(p['Preço Venda']);
-      const estoqueNum = typeof p['Quantidade'] === 'string' ? parseFloat(p['Quantidade'].replace(/\./g, '').replace(',', '.')) : Number(p['Quantidade']);
+      const priceNum = typeof p.salePrice === 'string' ? parseFloat(p.salePrice.replace(/\./g, '').replace(',', '.')) : Number(p.salePrice);
+      const inventoryNum = typeof p.quantity === 'string' ? parseFloat(p.quantity.replace(/\./g, '').replace(',', '.')) : Number(p.quantity);
 
-      const rawUnit = (p['Und.Sai.'] || p['Und'] || '').toString().toLowerCase();
-      let tipo: Product['TIPO'] = 'UND';
-      if (rawUnit.includes('kg') || rawUnit.includes('kilo') || rawUnit.includes('k')) tipo = 'KG';
-      else if (rawUnit.includes('sc') || rawUnit.includes('saco') || rawUnit.includes('fdo') || rawUnit.includes('fd') || rawUnit.includes('sh')) tipo = 'SC';
-      else tipo = 'UND';
+      const rawUnit = (p.unitOut || p.unit || '').toString().toLowerCase();
+      let type: Product['type'] = 'UND';
+      if (rawUnit.includes('kg') || rawUnit.includes('kilo') || rawUnit.includes('k')) type = 'KG';
+      else if (rawUnit.includes('sc') || rawUnit.includes('saco') || rawUnit.includes('fdo') || rawUnit.includes('fd') || rawUnit.includes('sh')) type = 'SC';
+      else type = 'UND';
 
       return {
-        COD: String(p['Código'] || p['Cód.Barras'] || p['codigo'] || ''),
-        NOME: String(p['Descrição'] || p['descricao'] || ''),
-        PRECO: isNaN(precoNum) ? 0 : precoNum,
-        TIPO: tipo,
-        estoque: isNaN(estoqueNum) ? 0 : estoqueNum,
+        code: String(p.code || p.barcode || ''),
+        name: String(p.description || ''),
+        price: isNaN(priceNum) ? 0 : priceNum,
+        type: type,
+        inventory: isNaN(inventoryNum) ? 0 : inventoryNum,
       };
     });
 
     // Filter out products that are free or have no stock
-    const products = productsRaw.filter((p: Product) => p.PRECO > 0 && p.estoque > 0);
+    const products = productsRaw.filter((p: Product) => p.price > 0 && p.inventory > 0);
 
     const inventory = products.reduce((acc: { [key: string]: number }, p: Product) => {
-      acc[p.COD] = p.estoque;
+      acc[p.code] = p.inventory;
       return acc;
     }, {});
 
     try {
-      const produtosNaoBurlados = products.filter((p: Product) => {
-        const isBlacklisted = blacklist.some((term: string) => p.NOME.toLowerCase().includes(term.toLowerCase()) || p.COD.toLowerCase().includes(term.toLowerCase()));
+      const filteredProducts = products.filter((p: Product) => {
+        const isBlacklisted = blacklist.some((term: string) => p.name.toLowerCase().includes(term.toLowerCase()) || p.code.toLowerCase().includes(term.toLowerCase()));
         return !isBlacklisted;
       });
 
       // Pass the 2 seconds timeout to the heuristic
-      const result = findCombinationHeuristic(produtosNaoBurlados, precoDesejado, inventory, 2000);
+      const result = findCombinationHeuristic(filteredProducts, targetPrice, inventory, 2000);
       
       if (result) {
         let isStockValid = true;
-        for (const cod in result.quantity) {
-          const requestedQty = result.quantity[cod];
-          const availableStock = inventory[cod];
+        for (const code in result.quantity) {
+          const requestedQty = result.quantity[code];
+          const availableStock = inventory[code];
           if (requestedQty > availableStock + 0.001) {
             isStockValid = false;
-            console.warn(`Stock validation failed for product COD ${cod}. Requested: ${requestedQty}, Available: ${availableStock}`);
+            console.warn(`Stock validation failed for product code ${code}. Requested: ${requestedQty}, Available: ${availableStock}`);
             break;
           }
         }
@@ -181,10 +181,10 @@ self.onmessage = (e: MessageEvent) => {
           const resultWithOriginalProducts = {
             ...result,
             products: result.products.map(p => {
-              const originalProduct = df.find((op: any) => op['Código'] === p.COD);
+              const originalProduct = df.find((op: any) => op.code === p.code);
               return {
                 ...originalProduct,
-                quantidadeUtilizada: result.quantity[p.COD]
+                usedQuantity: result.quantity[p.code]
               };
             })
           };
@@ -201,3 +201,4 @@ self.onmessage = (e: MessageEvent) => {
     }
   }
 };
+

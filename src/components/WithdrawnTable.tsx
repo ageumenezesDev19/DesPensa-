@@ -1,36 +1,51 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { useTranslation } from 'react-i18next';
 import "../styles/WithdrawnTable.scss";
-import { Produto } from "../utils/estoque";
+import { Product } from "../utils/inventory";
 
-export interface Retirado {
+export interface Withdrawn {
   id: string;
-  produto: Produto;
-  quantidadeRetirada: number;
-  Data: string;
+  product: Product;
+  withdrawnQuantity: number;
+  date: string;
 }
 
 interface Props {
-  produtos: Retirado[];
+  products: Withdrawn[];
   handleDelete: (id: string) => void;
 }
 
-const WithdrawnTable: React.FC<Props> = ({ produtos, handleDelete }) => {
+const WithdrawnTable: React.FC<Props> = ({ products, handleDelete }) => {
+  const { t, i18n } = useTranslation();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
   const [expandedDays, setExpandedDays] = useState<{ [month: string]: Set<string> }>({});
 
+  const currentLang = i18n.language.startsWith('pt') ? 'pt-BR' : 'en-US';
+
   const withdrawnByDay = useMemo(() => {
-    const groups: { [key: string]: Retirado[] } = {};
-    produtos.forEach((p) => {
-      const date = new Date(p.Data.split(" ")[0]);
-      const dateString = date.toISOString().split("T")[0];
-      if (!groups[dateString]) {
-        groups[dateString] = [];
+    const groups: { [key: string]: Withdrawn[] } = {};
+    if (!Array.isArray(products)) return groups;
+
+    products.forEach((p) => {
+      if (!p || !p.date) return;
+      try {
+        const datePart = p.date.split(" ")[0];
+        if (!datePart) return;
+        const date = new Date(datePart + 'T00:00:00');
+        if (isNaN(date.getTime())) return;
+        
+        const dateString = datePart;
+        if (!groups[dateString]) {
+          groups[dateString] = [];
+        }
+        groups[dateString].push(p);
+      } catch (e) {
+        console.error("[WithdrawnTable] Error processing date:", p.date, e);
       }
-      groups[dateString].push(p);
     });
     return groups;
-  }, [produtos]);
+  }, [products]);
 
   const handleDateChange = useCallback((days: number) => {
     setSelectedDate((prevDate) => {
@@ -80,53 +95,62 @@ const WithdrawnTable: React.FC<Props> = ({ produtos, handleDelete }) => {
     };
   }, [handleDateChange]);
 
-  const selectedDateString = selectedDate.toISOString().split("T")[0];
+  const selectedDateString = selectedDate.toLocaleDateString('en-CA'); // 'en-CA' neatly outputs locally adjusted 'YYYY-MM-DD'
   const productsForSelectedDay = withdrawnByDay[selectedDateString] || [];
   const totalForSelectedDay = productsForSelectedDay.reduce(
-    (acc, p) => acc + Number(p.produto["Preço Venda"]) * Number(p.quantidadeRetirada),
+    (acc, p) => acc + Number(p.product.salePrice ?? 0) * Number(p.withdrawnQuantity),
     0
   );
 
   const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat("pt-BR", {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    }).format(date);
+    try {
+      if (!date || isNaN(date.getTime())) return t('common.invalidDate', 'Invalid Date');
+      return new Intl.DateTimeFormat(currentLang, {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      }).format(date);
+    } catch (e) {
+      return date.toLocaleDateString(currentLang);
+    }
   };
 
   const withdrawnByMonth = useMemo(() => {
-    const groups: { [key: string]: { [key: string]: Retirado[] } } = {};
+    const groups: { [key: string]: { [key: string]: Withdrawn[] } } = {};
     Object.keys(withdrawnByDay).forEach((dateString) => {
-      const date = new Date(dateString);
-      const month = date.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+      const date = new Date(dateString + 'T00:00:00');
+      const month = date.toLocaleString(currentLang, { month: 'long', year: 'numeric' });
       if (!groups[month]) {
         groups[month] = {};
       }
       groups[month][dateString] = withdrawnByDay[dateString];
     });
     return groups;
-  }, [withdrawnByDay]);
+  }, [withdrawnByDay, currentLang]);
 
   const sortedMonths = Object.keys(withdrawnByMonth).sort((a, b) => {
-    const [monthA, yearA] = a.split(' de ');
-    const [monthB, yearB] = b.split(' de ');
-    const dateA = new Date(`${monthA} 1, ${yearA}`);
-    const dateB = new Date(`${monthB} 1, ${yearB}`);
-    return dateB.getTime() - dateA.getTime();
+    const getMonthDate = (m: string) => {
+        const dates = Object.keys(withdrawnByMonth[m]);
+        if (dates.length === 0) return 0;
+        const d = new Date(dates[0] + 'T00:00:00');
+        if (isNaN(d.getTime())) return 0;
+        d.setDate(1);
+        return d.getTime();
+    };
+    return getMonthDate(b) - getMonthDate(a);
   });
 
   return (
     <div className="withdrawn-table-container animated-fadein">
       <div className="date-navigator">
-        <button onClick={() => handleDateChange(-1)}>{"< Dia Anterior"}</button>
+        <button onClick={() => handleDateChange(-1)}>{t('withdrawn.previousDay', '< Dia Anterior')}</button>
         <h2>{formatDate(selectedDate)}</h2>
-        <button onClick={() => handleDateChange(1)}>{"Próximo Dia >"}</button>
+        <button onClick={() => handleDateChange(1)}>{t('withdrawn.nextDay', 'Próximo Dia >')}</button>
       </div>
 
       <div className="day-summary">
-        <h3>Total do Dia: R$ {totalForSelectedDay.toFixed(2)}</h3>
+        <h3>{t('withdrawn.dayTotal', 'Total do Dia')}: R$ {totalForSelectedDay.toFixed(2)}</h3>
       </div>
 
       {productsForSelectedDay.length > 0 ? (
@@ -134,24 +158,24 @@ const WithdrawnTable: React.FC<Props> = ({ produtos, handleDelete }) => {
           <table>
             <thead>
               <tr>
-                <th>Código</th>
-                <th>Descrição</th>
-                <th>Qtd.</th>
-                <th>Preço</th>
-                <th>Data</th>
-                <th>Ação</th>
+                <th>{t('withdrawn.table.code', 'Código')}</th>
+                <th>{t('withdrawn.table.description', 'Descrição')}</th>
+                <th>{t('withdrawn.table.quantity', 'Qtd.')}</th>
+                <th>{t('withdrawn.table.price', 'Preço')}</th>
+                <th>{t('withdrawn.table.date', 'Data')}</th>
+                <th>{t('withdrawn.table.action', 'Ação')}</th>
               </tr>
             </thead>
             <tbody>
               {productsForSelectedDay.map((p) => (
                 <tr key={p.id}>
-                  <td>{p.produto.Código}</td>
-                  <td>{p.produto.Descrição}</td>
-                  <td>{p.quantidadeRetirada}</td>
-                  <td>R$ {Number(p.produto["Preço Venda"]).toFixed(2)}</td>
-                  <td>{new Date(p.Data).toLocaleString('pt-BR')}</td>
+                  <td>{p.product?.code || '---'}</td>
+                  <td>{p.product?.description || '---'}</td>
+                  <td>{p.withdrawnQuantity}</td>
+                  <td>R$ {Number(p.product?.salePrice ?? 0).toFixed(2)}</td>
+                  <td>{p.date ? new Date(p.date.split(" ")[0] + 'T00:00:00').toLocaleDateString(currentLang) : '---'}</td>
                   <td>
-                    <button className="delete-btn" onClick={() => handleDelete(p.id)}>Reverter</button>
+                    <button className="delete-btn" onClick={() => handleDelete(p.id)}>{t('withdrawn.revert', 'Reverter')}</button>
                   </td>
                 </tr>
               ))}
@@ -159,33 +183,33 @@ const WithdrawnTable: React.FC<Props> = ({ produtos, handleDelete }) => {
           </table>
         </div>
       ) : (
-        <p className="no-data">Nenhum produto retirado neste dia.</p>
+        <p className="no-data">{t('withdrawn.emptyDay', 'Nenhum produto retirado neste dia.')}</p>
       )}
 
       <div className="monthly-summary">
-        <h2>Histórico de Retiradas</h2>
+        <h2>{t('withdrawn.history', 'Histórico de Retiradas')}</h2>
         {sortedMonths.map(month => {
-          const monthlyTotal = Object.values(withdrawnByMonth[month]).flat().reduce((acc, p) => acc + (Number(p.produto["Preço Venda"]) * Number(p.quantidadeRetirada)), 0);
+          const monthlyTotal = Object.values(withdrawnByMonth[month]).flat().reduce((acc, p) => acc + (Number(p.product?.salePrice ?? 0) * Number(p.withdrawnQuantity)), 0);
 
           return (
             <div key={month} className="month-section">
               <h3 onClick={() => toggleMonth(month)} className="month-header">
-                <span>{month.charAt(0).toUpperCase() + month.slice(1)} - Total: R$ {monthlyTotal.toFixed(2)}</span>
+                <span>{month.charAt(0).toUpperCase() + month.slice(1)} - {t('withdrawn.total', 'Total')}: R$ {monthlyTotal.toFixed(2)}</span>
                 <span className={`toggle-icon ${expandedMonths.has(month) ? 'expanded' : ''}`}></span>
               </h3>
               {expandedMonths.has(month) && (
                 <div className="month-content">
-                  {Object.keys(withdrawnByMonth[month]).sort((a,b) => new Date(b).getTime() - new Date(a).getTime()).map(dateString => (
+                  {Object.keys(withdrawnByMonth[month]).sort((a,b) => new Date(b + 'T00:00:00').getTime() - new Date(a + 'T00:00:00').getTime()).map(dateString => (
                     <div key={dateString} className="day-details">
                       <h4 onClick={() => toggleDay(month, dateString)} className="day-header">
-                        {formatDate(new Date(dateString))} - Total: R$ {withdrawnByMonth[month][dateString].reduce((acc, p) => acc + (Number(p.produto["Preço Venda"]) * Number(p.quantidadeRetirada)), 0).toFixed(2)}
+                        {formatDate(new Date(dateString + 'T00:00:00'))} - {t('withdrawn.total', 'Total')}: R$ {withdrawnByMonth[month][dateString].reduce((acc, p) => acc + (Number(p.product?.salePrice ?? 0) * Number(p.withdrawnQuantity)), 0).toFixed(2)}
                         <span className={`toggle-icon ${expandedDays[month]?.has(dateString) ? 'expanded' : ''}`}></span>
                       </h4>
                       {expandedDays[month]?.has(dateString) && (
                         <ul>
                           {withdrawnByMonth[month][dateString].map((p) => (
                             <li key={p.id}>
-                              {p.produto.Descrição} ({p.quantidadeRetirada}x) - R$ {Number(p.produto["Preço Venda"]).toFixed(2)}
+                              {p.product?.description || '---'} ({p.withdrawnQuantity}x) - R$ {Number(p.product?.salePrice ?? 0).toFixed(2)}
                               <button className="delete-btn-small" onClick={() => handleDelete(p.id)}>
                                 <span>
                                   X

@@ -1,30 +1,39 @@
 import * as cheerio from 'cheerio';
 // import dayjs from 'dayjs';
 
-// Função para carregar dados do HTML (produtos.html) a partir de string
-export function carregarDadosHtmlFromString(html: string): { df: any[] } {
-  console.log(`[carregarDadosHtmlFromString] Tamanho do HTML recebido: ${html.length} caracteres`);
+// export function loadHtmlDataFromString(html: string): { df: any[] } {
+export function loadHtmlDataFromString(html: string): { df: any[] } {
+  console.log(`[loadHtmlDataFromString] Initial HTML size: ${html.length} chars`);
   
   const normalizeColName = (col: string): string => {
     const map: { [key: string]: string } = {
       'cód. barras': 'Cód.Barras',
       'cód.barras': 'Cód.Barras',
       'cod.barras': 'Cód.Barras',
+      'barcode': 'Cód.Barras',
       'und': 'Und',  // Keep original name, don't convert
       'und.sai.': 'Und.Sai.',
       'und.sai': 'Und.Sai.',
+      'unit': 'Und', // Map English 'Unit' to 'Und'
       'descrição': 'Descrição',
       'descricao': 'Descrição',
+      'description': 'Descrição',
       'codigo': 'Código',
       'código': 'Código',
+      'code': 'Código',
       'fornecedor': 'Fornecedor',
+      'supplier': 'Fornecedor',
       'quantidade': 'Quantidade',
+      'quantity': 'Quantidade',
       'preço custo': 'Preço Custo',
       'precocusto': 'Preço Custo',
+      'cost price': 'Preço Custo',
       'margem lucro': 'Margem Lucro',
       'margemlucro': 'Margem Lucro',
+      'profit margin': 'Margem Lucro',
       'preço venda': 'Preço Venda',
       'precovenda': 'Preço Venda',
+      'sale price': 'Preço Venda',
       'csosn': 'CSOSN',
       'st': 'ST',  // Keep original name, don't convert
       'elo': 'ELO',
@@ -39,122 +48,124 @@ export function carregarDadosHtmlFromString(html: string): { df: any[] } {
     tableHtml = html.substring(tableStartIndex);
   }
 
-  console.log(`[carregarDadosHtmlFromString] Tamanho do HTML da tabela: ${tableHtml.length} caracteres`);
+  console.log(`[loadHtmlDataFromString] HTML table size: ${tableHtml.length} chars`);
 
   // Attempt to parse as HTML table first
   const $ = cheerio.load(tableHtml);
   const headerCells = $('table tr').first().find('td');
-  let colunas = headerCells.map((_, el) => $(el).text().trim()).get();
+  let columns = headerCells.map((_, el) => $(el).text().trim()).get();
   let df: any[] = [];
 
-  console.log(`[carregarDadosHtmlFromString] Colunas encontradas: ${colunas.length}`, colunas);
+  console.log(`[loadHtmlDataFromString] Found Columns: ${columns.length}`, columns);
 
-  if (colunas.length > 0) {
+  if (columns.length > 0) {
     // HTML Table parsing logic
-    const numColunas = colunas.length;
+    const numColumns = columns.length;
     const dataRows = $('table tr').slice(1);
-    console.log(`[carregarDadosHtmlFromString] Total de linhas de dados encontradas: ${dataRows.length}`);
+    console.log(`[loadHtmlDataFromString] Total data rows found: ${dataRows.length}`);
     
     df = dataRows.map((_, row) => {
       const rowCells = $(row).find('td');
-      if (rowCells.length !== numColunas) return null;
+      if (rowCells.length !== numColumns) return null;
 
       const rawObj: Record<string, string> = {};
-      colunas.forEach((col, idx) => {
+      columns.forEach((col, idx) => {
         const normalizedCol = normalizeColName(col);
         rawObj[normalizedCol] = $(rowCells[idx]).text().trim();
       });
 
-      const unidadeVal = rawObj['Und'] || rawObj['Und.Sai.'] || '';
+      const unitVal = rawObj['Und'] || rawObj['Und.Sai.'] || '';
       return {
-        'Código': rawObj['Código'] || '',
-        'Cód.Barras': rawObj['Cód.Barras'] || '',
-        'Descrição': rawObj['Descrição'] || '',
-        'Und': unidadeVal,
-        'Und.Sai.': unidadeVal,
-        'Fornecedor': rawObj['Fornecedor'] || '',
-        'Quantidade': rawObj['Quantidade'] || '0',
-        'Preço Custo': rawObj['Preço Custo'] || '0',
-        'Margem Lucro': rawObj['Margem Lucro'] || '0',
-        'Preço Venda': rawObj['Preço Venda'] || '0',
-        'ST': rawObj['ST'] || rawObj['CSOSN'] || '',  // Support both formats
-        'ELO': rawObj['ELO'] || '',
+        code: rawObj['Código'] || '',
+        barcode: rawObj['Cód.Barras'] || '',
+        description: rawObj['Descrição'] || '',
+        unit: unitVal,
+        unitOut: unitVal,
+        supplier: rawObj['Fornecedor'] || '',
+        quantity: rawObj['Quantidade'] || '0',
+        costPrice: rawObj['Preço Custo'] || '0',
+        profitMargin: rawObj['Margem Lucro'] || '0',
+        salePrice: rawObj['Preço Venda'] || '0',
+        st: rawObj['ST'] || rawObj['CSOSN'] || '',  // Support both formats
+        elo: rawObj['ELO'] || '',
       };
-    }).get().filter(item => item !== null && item['Código']);
+    }).get().filter(item => item !== null && item.code);
     
-    console.log(`[carregarDadosHtmlFromString] Produtos carregados após filtrar: ${df.length}`);
+    console.log(`[loadHtmlDataFromString] Final extracted items parsed: ${df.length}`);
   } else {
     // Fallback to plain text parsing
-    console.log(`[carregarDadosHtmlFromString] HTML table parsing não funcionou, tentando fallback de texto puro`);
+    console.log(`[loadHtmlDataFromString] HTML table parsing failed, falling back to text`);
     const lines = html.split('\n').map(line => line.trim()).filter(line => line);
-    console.log(`[carregarDadosHtmlFromString] Total de linhas após split: ${lines.length}`);
+    console.log(`[loadHtmlDataFromString] Total lines after split: ${lines.length}`);
     
     let headerIndex = -1;
     for (let i = 0; i < lines.length; i++) {
-        if (lines[i].toLowerCase().includes('código') && lines[i].toLowerCase().includes('descrição')) {
+        const lineLower = lines[i].toLowerCase();
+        if ((lineLower.includes('código') && lineLower.includes('descrição')) || 
+            (lineLower.includes('code') && lineLower.includes('description'))) {
             headerIndex = i;
             break;
         }
     }
 
-    console.log(`[carregarDadosHtmlFromString] Header encontrado no índice: ${headerIndex}`);
+    console.log(`[loadHtmlDataFromString] Header found at index: ${headerIndex}`);
 
     if (headerIndex !== -1) {
       const headerLine = lines[headerIndex];
-      colunas = headerLine.split(/\s{2,}|\t/);
-      const numColunas = colunas.length;
+      columns = headerLine.split(/\s{2,}|\t/);
+      const numColumns = columns.length;
       const dataLines = lines.slice(headerIndex + 1);
       
-      console.log(`[carregarDadosHtmlFromString] Colunas do header: ${numColunas}`, colunas);
-      console.log(`[carregarDadosHtmlFromString] Linhas de dados para processar: ${dataLines.length}`);
+      console.log(`[loadHtmlDataFromString] Header columns count: ${numColumns}`, columns);
+      console.log(`[loadHtmlDataFromString] Data lines to process: ${dataLines.length}`);
 
       df = dataLines.map(line => {
         const values = line.split(/\s{2,}|\t/);
         
         // Strict check: allows for one missing column (e.g., ELO)
-        if (values.length < numColunas - 1 || values.length > numColunas) {
+        if (values.length < numColumns - 1 || values.length > numColumns) {
             return null;
         }
         
         const rawObj: Record<string, string> = {};
-        colunas.forEach((col, idx) => {
+        columns.forEach((col, idx) => {
             const normalizedCol = normalizeColName(col);
             rawObj[normalizedCol] = values[idx] || '';
         });
 
-        const unidadeVal = rawObj['Und'] || rawObj['Und.Sai.'] || '';
+        const unitVal = rawObj['Und'] || rawObj['Und.Sai.'] || '';
         return {
-          'Código': rawObj['Código'] || '',
-          'Cód.Barras': rawObj['Cód.Barras'] || '',
-          'Descrição': rawObj['Descrição'] || '',
-          'Und': unidadeVal,
-          'Und.Sai.': unidadeVal,
-          'Fornecedor': rawObj['Fornecedor'] || '',
-          'Quantidade': rawObj['Quantidade'] || '0',
-          'Preço Custo': rawObj['Preço Custo'] || '0',
-          'Margem Lucro': rawObj['Margem Lucro'] || '0',
-          'Preço Venda': rawObj['Preço Venda'] || '0',
-          'ST': rawObj['ST'] || rawObj['CSOSN'] || '',  // Support both formats
-          'ELO': rawObj['ELO'] || '',
+          code: rawObj['Código'] || '',
+          barcode: rawObj['Cód.Barras'] || '',
+          description: rawObj['Descrição'] || '',
+          unit: unitVal,
+          unitOut: unitVal,
+          supplier: rawObj['Fornecedor'] || '',
+          quantity: rawObj['Quantidade'] || '0',
+          costPrice: rawObj['Preço Custo'] || '0',
+          profitMargin: rawObj['Margem Lucro'] || '0',
+          salePrice: rawObj['Preço Venda'] || '0',
+          st: rawObj['ST'] || rawObj['CSOSN'] || '',  // Support both formats
+          elo: rawObj['ELO'] || '',
         };
-      }).filter(item => item !== null && item['Código'] && item['Descrição']);
+      }).filter(item => item !== null && item.code && item.description);
       
-      console.log(`[carregarDadosHtmlFromString] Produtos finais após fallback: ${df.length}`);
+      console.log(`[loadHtmlDataFromString] Final items after fallback: ${df.length}`);
     } else {
-      console.error(`[carregarDadosHtmlFromString] Nenhum header encontrado no arquivo`);
+      console.error(`[loadHtmlDataFromString] No headers found in file`);
     }
   }
 
   return { df };
 }
 
-export function tratarDados(df: any[]): any[] {
-  const camposNumericos = ['Quantidade', 'Preço Custo', 'Margem Lucro', 'Preço Venda'];
+export function processData(df: any[]): any[] {
+  const numericFields = ['quantity', 'costPrice', 'profitMargin', 'salePrice'];
   return df.map(row => {
-    const novoRow = { ...row };
-    for (const campo of camposNumericos) {
-      if (novoRow[campo] && typeof novoRow[campo] === 'string') {
-        let str = novoRow[campo].trim().replace(/\s/g, ''); // remove spaces
+    const newRow = { ...row };
+    for (const field of numericFields) {
+      if (newRow[field] && typeof newRow[field] === 'string') {
+        let str = newRow[field].trim().replace(/\s/g, ''); // remove spaces
 
         if (str.includes(',')) {
           // Comma present, so dots are thousands separators
@@ -168,58 +179,58 @@ export function tratarDados(df: any[]): any[] {
           num = 0;
         }
 
-        if (campo === 'Quantidade') {
+        if (field === 'quantity') {
           // Round to 3 decimal places to avoid issues with "0,000..."
-          novoRow[campo] = Math.round(num * 1000) / 1000;
+          newRow[field] = Math.round(num * 1000) / 1000;
         } else {
           // Round prices to 2 decimal places
-          novoRow[campo] = Math.round(num * 100) / 100;
+          newRow[field] = Math.round(num * 100) / 100;
         }
       }
     }
-    return novoRow;
+    return newRow;
   });
 }
 
-// Função para processar CSV de retirados a partir de string
-export function carregarRetiradosFromString(csv: string): any[] {
-  const linhas = csv.trim().split('\n');
-  const colunas = linhas[0].split(',');
-  return linhas.slice(1).map(linha => {
-    const valores = linha.split(',');
+// Function to parse withdrawn CSV from string
+export function loadWithdrawnFromString(csv: string): any[] {
+  const lines = csv.trim().split('\n');
+  const cols = lines[0].split(',');
+  return lines.slice(1).map(line => {
+    const values = line.split(',');
     const obj: Record<string, string> = {};
-    colunas.forEach((col, idx) => {
-      obj[col] = valores[idx];
+    cols.forEach((col, idx) => {
+      obj[col] = values[idx];
     });
     return obj;
   });
 }
 
-// Função para processar blacklist a partir de string
-export function carregarBlacklistFromString(txt: string): string[] {
+// Function to parse blacklist text from string
+export function loadBlacklistFromString(txt: string): string[] {
   return txt.trim().split('\n').map(l => l.trim()).filter(Boolean);
 }
 
-// Função para exportar produtos para HTML string (simplificado)
-export function exportarProdutosParaHtml(produtos: any[], colunas: string[]): string {
-  let html = '<table><tr>' + colunas.map(c => `<td>${c}</td>`).join('') + '</tr>';
-  for (const p of produtos) {
-    html += '<tr>' + colunas.map(c => `<td>${p[c]}</td>`).join('') + '</tr>';
+// Function to export products to HTML string
+export function exportProductsToHtml(products: any[], columns: string[]): string {
+  let html = '<table><tr>' + columns.map(c => `<td>${c}</td>`).join('') + '</tr>';
+  for (const p of products) {
+    html += '<tr>' + columns.map(c => `<td>${p[c]}</td>`).join('') + '</tr>';
   }
   html += '</table>';
   return html;
 }
 
-// Função para exportar retirados para CSV string
-export function exportarRetiradosParaCsv(retirados: any[], colunas: string[]): string {
-  let csv = colunas.join(',') + '\n';
-  for (const r of retirados) {
-    csv += colunas.map(c => r[c]).join(',') + '\n';
+// Function to export withdrawn products to CSV string
+export function exportWithdrawnToCsv(withdrawn: any[], columns: string[]): string {
+  let csv = columns.join(',') + '\n';
+  for (const r of withdrawn) {
+    csv += columns.map(c => r[c]).join(',') + '\n';
   }
   return csv;
 }
 
-// Função para exportar blacklist para TXT string
-export function exportarBlacklistParaTxt(blacklist: string[]): string {
+// Function to export blacklist to TXT string
+export function exportBlacklistToTxt(blacklist: string[]): string {
   return blacklist.join('\n');
 }

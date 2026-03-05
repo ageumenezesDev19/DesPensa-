@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useProfiles } from '../hooks/useProfiles';
 import { useNotification } from '../hooks/useNotification';
 import { ConfirmationModal } from './ConfirmationModal';
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export const ProfileManagementModal: React.FC<Props> = ({ onClose }) => {
+  const { t } = useTranslation();
   const {
     profiles,
     activeProfile,
@@ -42,13 +44,13 @@ export const ProfileManagementModal: React.FC<Props> = ({ onClose }) => {
     }
   };
 
-  const handleBackup = (profileName: string) => {
-    const { success, isEmpty } = backupProfile(profileName);
+  const handleBackup = async (profileName: string) => {
+    const { success, isEmpty } = await backupProfile(profileName);
     if (success) {
       if (isEmpty) {
-        showNotification(`Backup do perfil "${profileName}" criado, mas o perfil está vazio.`);
+        showNotification(t('profile.backupEmpty', { name: profileName, defaultValue: `Backup do perfil "${profileName}" criado, mas o perfil está vazio.` }));
       } else {
-        showNotification(`Backup do perfil "${profileName}" criado com sucesso!`);
+        showNotification(t('profile.backupSuccess', { name: profileName, defaultValue: `Backup do perfil "${profileName}" criado com sucesso!` }));
       }
     }
   };
@@ -82,7 +84,7 @@ export const ProfileManagementModal: React.FC<Props> = ({ onClose }) => {
         const content = await file.text();
         restoreProfile(content);
       } catch (err) {
-        alert("Erro ao ler o arquivo de backup.");
+        alert(t('common.errorReadingFile', { error: (err instanceof Error ? err.message : String(err)), defaultValue: "Erro ao ler o arquivo de backup." }));
         console.error("File reading error:", err);
       }
     }
@@ -94,13 +96,13 @@ export const ProfileManagementModal: React.FC<Props> = ({ onClose }) => {
       <div className="modal-overlay animated-fadein">
         <div className="modal-content profile-management-modal">
           <div className="modal-header">
-            <h2>Gerenciar Perfis</h2>
-            <button className="close-btn" onClick={onClose} title="Fechar">×</button>
+            <h2>{t('profile.modalTitle', 'Gerenciar Perfis')}</h2>
+            <button className="close-btn" onClick={onClose} title={t('profile.cancel', 'Fechar')}>×</button>
           </div>
           
           <div className="modal-body">
             <div className="section profiles-section">
-              <h3 className="section-title">Seus Perfis</h3>
+              <h3 className="section-title">{t('profile.yourProfiles', 'Seus Perfis')}</h3>
               <div className="profile-list">
                 {profiles.map(profile => (
                   <div key={profile} className={`profile-item ${profile === activeProfile ? 'active' : ''}`}>
@@ -112,11 +114,11 @@ export const ProfileManagementModal: React.FC<Props> = ({ onClose }) => {
                           onChange={(e) => setEditingProfileName(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && handleEdit()}
                           autoFocus
-                          placeholder="Nome do perfil"
+                          placeholder={t('profile.namePlaceholder', 'Nome do perfil')}
                         />
                         <div className="editor-actions">
-                          <button className="icon-btn save" onClick={handleEdit} title="Salvar">✓</button>
-                          <button className="icon-btn cancel" onClick={() => setEditingProfile(null)} title="Cancelar">✕</button>
+                          <button className="icon-btn save" onClick={handleEdit} title={t('profile.save', 'Salvar')}>✓</button>
+                          <button className="icon-btn cancel" onClick={() => setEditingProfile(null)} title={t('profile.cancel', 'Cancelar')}>✕</button>
                         </div>
                       </div>
                     ) : (
@@ -125,21 +127,21 @@ export const ProfileManagementModal: React.FC<Props> = ({ onClose }) => {
                           <span className="profile-name">
                             {profile}
                           </span>
-                          {profile === activeProfile && <span className="badge active-badge">Ativo</span>}
+                          {profile === activeProfile && <span className="badge active-badge">{t('profile.active', 'Ativo')}</span>}
                         </div>
                         
                         <div className="profile-actions">
                           <button 
                             className="icon-btn edit" 
                             onClick={() => setEditingProfile(profile)} 
-                            title="Renomear perfil"
+                            title={t('profile.edit', 'Renomear perfil')}
                           >
                             ✎
                           </button>
                           <button 
                             className="icon-btn backup" 
                             onClick={() => handleBackup(profile)} 
-                            title="Fazer backup deste perfil"
+                            title={t('profile.backup', 'Fazer backup deste perfil')}
                           >
                             ⬇
                           </button>
@@ -147,7 +149,7 @@ export const ProfileManagementModal: React.FC<Props> = ({ onClose }) => {
                             className="icon-btn delete" 
                             onClick={() => handleDeleteClick(profile)}
                             disabled={profile === 'Default' || profile === activeProfile}
-                            title={profile === 'Default' || profile === activeProfile ? "Não é possível excluir este perfil" : "Excluir perfil"}
+                            title={profile === 'Default' || profile === activeProfile ? t('profile.cannotDelete', "Não é possível excluir este perfil") : t('profile.delete', "Excluir perfil")}
                           >
                             🗑
                           </button>
@@ -160,7 +162,7 @@ export const ProfileManagementModal: React.FC<Props> = ({ onClose }) => {
             </div>
 
             <div className="section global-actions-section">
-              <h3 className="section-title">Ações</h3>
+              <h3 className="section-title">{t('profile.actions', 'Ações')}</h3>
               
               <div className="action-row create-row">
                 <input
@@ -168,20 +170,20 @@ export const ProfileManagementModal: React.FC<Props> = ({ onClose }) => {
                   value={newProfileName}
                   onChange={(e) => setNewProfileName(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleCreate()}
-                  placeholder="Nome do novo perfil"
+                  placeholder={t('profile.namePlaceholder', 'Nome do novo perfil')}
                 />
                 <button className="primary-btn" onClick={handleCreate} disabled={!newProfileName.trim()}>
-                  Criar Novo
+                  {t('profile.create', 'Criar Novo')}
                 </button>
               </div>
 
-              <div className="divider-text">ou</div>
+              <div className="divider-text">{t('profile.or', 'ou')}</div>
 
               <div className="action-row restore-row">
                  <button className="secondary-btn restore-btn" onClick={handleRestoreClick}>
-                  <span className="icon">⬆</span> Restaurar Backup
+                  <span className="icon">⬆</span> {t('profile.restore', 'Restaurar Backup')}
                 </button>
-                <p className="help-text">Restaure um arquivo .json salvo anteriormente.</p>
+                <p className="help-text">{t('profile.restoreHelp', 'Restaure um arquivo .json salvo anteriormente.')}</p>
               </div>
             </div>
           </div>
@@ -200,14 +202,14 @@ export const ProfileManagementModal: React.FC<Props> = ({ onClose }) => {
         <ConfirmationModal
           message={
             <span>
-              Tem certeza que deseja deletar o perfil <strong>"{showDeleteConfirm}"</strong>?
+              {t('profile.deleteConfirm', { name: showDeleteConfirm, defaultValue: `Tem certeza que deseja deletar o perfil "${showDeleteConfirm}"?` })}
               <br />
-              Todos os dados associados serão perdidos permanentemente.
+              {t('profile.deleteWarning', 'Todos os dados associados serão perdidos permanentemente.')}
             </span>
           }
           onConfirm={confirmDelete}
           onClose={() => setShowDeleteConfirm(null)}
-          confirmText="Sim, Excluir"
+          confirmText={t('profile.confirmDelete', 'Sim, Excluir')}
         />
       )}
     </>
