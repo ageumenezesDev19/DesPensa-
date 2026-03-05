@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const ACTIVE_PROFILE_KEY = 'active_user_profile';
 const DEFAULT_PROFILE = 'Default';
@@ -40,7 +40,8 @@ const getTauriFs = async () => {
 
 export function useStorage<T>(key: string, initialValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
   const CHUNK_SIZE = 500; // items per chunk when chunking arrays
-  const [storedValue, setStoredValue] = useState<T>(initialValue);
+  const initialValueRef = useRef(initialValue);
+  const [storedValue, setStoredValue] = useState<T>(initialValueRef.current);
 
   // Initialization Effect
   useEffect(() => {
@@ -61,14 +62,14 @@ export function useStorage<T>(key: string, initialValue: T): [T, React.Dispatch<
             const fileExists = await fs.exists(`${profiledKey}.json`, { baseDir: fs.BaseDirectory.AppLocalData });
             if (fileExists) {
               const fileContent = await fs.readTextFile(`${profiledKey}.json`, { baseDir: fs.BaseDirectory.AppLocalData });
-              if (isMounted) setStoredValue(JSON.parse(fileContent) ?? initialValue);
+              if (isMounted) setStoredValue(JSON.parse(fileContent) ?? initialValueRef.current);
               console.log(`[useStorage] Loaded ${key} from Tauri FS. Profile: ${getActiveProfile()}`);
             } else {
-              if (isMounted) setStoredValue(initialValue);
+              if (isMounted) setStoredValue(initialValueRef.current);
             }
           } catch (e) {
             console.error(`[useStorage] Tauri FS read error for ${profiledKey}:`, e);
-            if (isMounted) setStoredValue(initialValue);
+            if (isMounted) setStoredValue(initialValueRef.current);
           }
         } else {
           // Web Fallback: localStorage chunking
@@ -89,20 +90,20 @@ export function useStorage<T>(key: string, initialValue: T): [T, React.Dispatch<
                 }
               }
               console.log(`[useStorage] Reconstructed ${key} from ${items.length} items across ${partsCount} parts. Profile: ${getActiveProfile()}`);
-              if (isMounted) setStoredValue((items.length ? items : initialValue) as unknown as T);
+              if (isMounted) setStoredValue((items.length ? items : initialValueRef.current) as unknown as T);
             } catch (e) {
               console.warn('[useStorage] Failed to reconstruct chunks, falling back to single key', e);
             }
           } else {
             const item = window.localStorage.getItem(profiledKey);
-            const parsed = item ? JSON.parse(item) : initialValue;
+            const parsed = item ? JSON.parse(item) : initialValueRef.current;
             console.log(`[useStorage] Loaded ${key} from localStorage single key. Profile: ${getActiveProfile()}`);
-            if (isMounted) setStoredValue(parsed ?? initialValue);
+            if (isMounted) setStoredValue(parsed ?? initialValueRef.current);
           }
         }
       } catch (error) {
         console.error(`[useStorage] Error initializing key "${getProfiledKey(key)}":`, error);
-        if (isMounted) setStoredValue(initialValue);
+        if (isMounted) setStoredValue(initialValueRef.current);
       } finally {
         // initialization complete
       }
@@ -110,7 +111,8 @@ export function useStorage<T>(key: string, initialValue: T): [T, React.Dispatch<
 
     loadInitialData();
     return () => { isMounted = false; };
-  }, [key, initialValue]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
 
 
   const setValue: React.Dispatch<React.SetStateAction<T>> = async (value) => {
@@ -177,9 +179,9 @@ export function useStorage<T>(key: string, initialValue: T): [T, React.Dispatch<
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === getProfiledKey(key)) {
         try {
-          setStoredValue(e.newValue === null ? initialValue : (JSON.parse(e.newValue) ?? initialValue));
+          setStoredValue(e.newValue === null ? initialValueRef.current : (JSON.parse(e.newValue) ?? initialValueRef.current));
         } catch (error) {
-          setStoredValue(initialValue);
+          setStoredValue(initialValueRef.current);
         }
       }
     };
@@ -194,9 +196,9 @@ export function useStorage<T>(key: string, initialValue: T): [T, React.Dispatch<
           const fileExists = await fs.exists(`${profiledKey}.json`, { baseDir: fs.BaseDirectory.AppLocalData });
           if (fileExists) {
              const fileContent = await fs.readTextFile(`${profiledKey}.json`, { baseDir: fs.BaseDirectory.AppLocalData });
-             setStoredValue(JSON.parse(fileContent) ?? initialValue);
+             setStoredValue(JSON.parse(fileContent) ?? initialValueRef.current);
           } else {
-             setStoredValue(initialValue);
+             setStoredValue(initialValueRef.current);
           }
           return;
         }
@@ -215,15 +217,15 @@ export function useStorage<T>(key: string, initialValue: T): [T, React.Dispatch<
               else items.push(parsedPart);
             } catch (e) {}
           }
-          setStoredValue((items.length ? items : initialValue) as unknown as T);
+          setStoredValue((items.length ? items : initialValueRef.current) as unknown as T);
           return;
         }
 
         const item = window.localStorage.getItem(profiledKey);
-        const parsed = item ? JSON.parse(item) : initialValue;
-        setStoredValue(parsed ?? initialValue);
+        const parsed = item ? JSON.parse(item) : initialValueRef.current;
+        setStoredValue(parsed ?? initialValueRef.current);
       } catch (error) {
-        setStoredValue(initialValue);
+        setStoredValue(initialValueRef.current);
       }
     };
 
@@ -234,7 +236,8 @@ export function useStorage<T>(key: string, initialValue: T): [T, React.Dispatch<
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('profileChanged', handleProfileChange as EventListener);
     };
-  }, [key, initialValue]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
 
   return [storedValue, setValue];
 }
