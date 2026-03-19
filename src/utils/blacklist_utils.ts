@@ -13,8 +13,9 @@ export function saveBlacklistToString(blacklist: string[]): string {
 }
 
 export function addToBlacklist(blacklist: string[], term: string): string[] {
-  if (term && !blacklist.includes(term)) {
-    return [...blacklist, term];
+  const normalizedTerm = term.trim().toLowerCase();
+  if (normalizedTerm && !blacklist.some(t => t.toLowerCase() === normalizedTerm)) {
+    return [...blacklist, term.trim()];
   }
   return blacklist;
 }
