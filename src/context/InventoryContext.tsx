@@ -145,16 +145,27 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
   const handleWithdrawCombination = (combination: ProductWithQuantity[]) => {
     setLoading(true);
 
-    const withdrawnProductsMap = new Map<string, number>();
+    const requestedMap = new Map<string, number>();
     combination.forEach(p => {
-      withdrawnProductsMap.set(p.code, (withdrawnProductsMap.get(p.code) || 0) + p.usedQuantity);
+      requestedMap.set(p.code, (requestedMap.get(p.code) || 0) + p.usedQuantity);
+    });
+
+    // Calculate actual withdrawals capped by current stock
+    const actualWithdrawals = new Map<string, number>();
+    products.forEach(p => {
+      if (requestedMap.has(p.code)) {
+        const actual = Math.min(requestedMap.get(p.code)!, p.quantity);
+        if (actual > 0) {
+          actualWithdrawals.set(p.code, actual);
+        }
+      }
     });
 
     setProducts(prevProducts => {
       return prevProducts
         .map(p => {
-          if (withdrawnProductsMap.has(p.code)) {
-            return { ...p, quantity: p.quantity - withdrawnProductsMap.get(p.code)! };
+          if (actualWithdrawals.has(p.code)) {
+            return { ...p, quantity: p.quantity - actualWithdrawals.get(p.code)! };
           }
           return p;
         })
@@ -163,16 +174,18 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
 
     const today = new Date();
     const formattedDate = formatDateForDB(today);
-    const newWithdrawnList: Withdrawn[] = combination.map(p => ({
-      id: `${p.code}-${Date.now()}`,
-      product: p,
-      withdrawnQuantity: p.usedQuantity,
-      date: formattedDate,
-    }));
+    const newWithdrawnList: Withdrawn[] = combination
+      .filter(p => actualWithdrawals.has(p.code))
+      .map(p => ({
+        id: `${p.code}-${Date.now()}`,
+        product: p,
+        withdrawnQuantity: actualWithdrawals.get(p.code)!,
+        date: formattedDate,
+      }));
 
     setWithdrawn(prevWithdrawn => [...prevWithdrawn, ...newWithdrawnList]);
 
-    const totalItems = combination.reduce((acc, p) => acc + p.usedQuantity, 0);
+    const totalItems = newWithdrawnList.reduce((acc, w) => acc + w.withdrawnQuantity, 0);
 
     setLoading(false);
     showNotification(t('inventory.notifications.itemsWithdrawn', { count: totalItems, defaultValue: `${totalItems} items withdrawn from stock.` }));
@@ -187,10 +200,10 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   const handleRestoreProduct = (product: Product) => {
     setProducts(prevProducts => {
-      // Find if it already exists (though it shouldn't if deleted)
       const exists = prevProducts.some(p => p.code === product.code);
       if (exists) return prevProducts;
-      return [...prevProducts, product];
+      const { usedQuantity, Difference, ...cleanProduct } = product as any;
+      return [...prevProducts, cleanProduct as Product];
     });
   };
 

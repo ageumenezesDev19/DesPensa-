@@ -81,7 +81,9 @@ const findCombinationHeuristic = (
     const totalCents = calculateTotalInCents(currentCombo, currentQuantity, productsInCents);
     const diff = Math.abs(totalCents - targetCents);
 
-    if (diff < minDiff) {
+    const isBetter = diff < minDiff ||
+      (diff === minDiff && currentCombo.length < (bestCombination?.products.length ?? Infinity));
+    if (isBetter) {
        minDiff = diff;
        bestCombination = {
           products: currentCombo,
@@ -135,8 +137,8 @@ self.onmessage = (e: MessageEvent) => {
 
       const rawUnit = (p.unitOut || p.unit || '').toString().toLowerCase();
       let type: Product['type'] = 'UND';
-      if (rawUnit.includes('kg') || rawUnit.includes('kilo') || rawUnit.includes('k')) type = 'KG';
-      else if (rawUnit.includes('sc') || rawUnit.includes('saco') || rawUnit.includes('fdo') || rawUnit.includes('fd') || rawUnit.includes('sh')) type = 'SC';
+      if (rawUnit.includes('kg') || rawUnit.includes('kilo')) type = 'KG';
+      else if (rawUnit.includes('sc') || rawUnit.includes('saco') || rawUnit.includes('fdo') || rawUnit.includes('fd') || rawUnit.includes('sh') || rawUnit.includes('lt') || rawUnit.includes('litro')) type = 'SC';
       else type = 'UND';
 
       return {

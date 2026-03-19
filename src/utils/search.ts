@@ -14,7 +14,10 @@ export function searchNearbyProducts(df: Product[], desiredPrice: number, n = 3)
 export function searchNearbyProduct(df: Product[], desiredPrice: number, blacklist: string[] = []): Product | undefined {
   let filtered: ProductWithDifference[] = df.map(p => ({ ...p })).filter(p => p.quantity >= 0.001);
   for (const term of blacklist) {
-    filtered = filtered.filter(p => !p.description.toLowerCase().includes(term.toLowerCase()));
+    filtered = filtered.filter(p =>
+      !p.description.toLowerCase().includes(term.toLowerCase()) &&
+      !p.code.toLowerCase().includes(term.toLowerCase())
+    );
   }
   if (filtered.length === 0) return undefined;
   filtered.forEach(p => p.Difference = Math.abs((p.salePrice ?? 0) - desiredPrice));

@@ -92,7 +92,7 @@ const SearchBar: React.FC = () => {
     const timerId = setTimeout(() => {
       setUndoToasts(prev => prev.filter(t => t.id !== toastId));
       showNotification(t('inventory.notifications.productPermanentlyDeleted', { name: product.description, defaultValue: `Produto ${product.description} removido em definitivo.` }));
-    }, 8000);
+    }, 2000);
 
     setUndoToasts(prev => [...prev, { id: toastId, product, timerId }]);
   };
@@ -251,7 +251,7 @@ const SearchBar: React.FC = () => {
             {result.combination
               .slice((combPage - 1) * COMB_ITEMS_PER_PAGE, combPage * COMB_ITEMS_PER_PAGE)
               .map((p: any, i: number) => (
-              <li key={i} className={`result-item ${deletedCombinationItems.has(p.code) ? 'is-deleted' : ''}`}>
+              <li key={p.code} className={`result-item ${deletedCombinationItems.has(p.code) ? 'is-deleted' : ''}`}>
                 <div className="delete-slider" onClick={() => !deletedCombinationItems.has(p.code) && handleDeleteComboItem(p)}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="3 6 5 6 21 6"></polyline>

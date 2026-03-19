@@ -172,9 +172,9 @@ export function processData(df: any[]): any[] {
           str = str.replace(/\./g, '').replace(',', '.');
         }
         // If no comma, any dot is a decimal separator, so we don't touch it.
-        
+
         let num = parseFloat(str);
-        
+
         if (isNaN(num)) {
           num = 0;
         }
@@ -189,7 +189,7 @@ export function processData(df: any[]): any[] {
       }
     }
     return newRow;
-  });
+  }).filter(row => row.quantity > 0);
 }
 
 // Function to parse withdrawn CSV from string
