@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Product } from '../utils/inventory';
+import { Product, FlaggedProduct } from '../utils/inventory';
 import { searchNearbyProduct } from '../utils/search';
 import { ProductWithQuantity } from '../context/InventoryContext';
 
@@ -8,12 +8,13 @@ export type SearchMode = 'combination' | 'product_price' | 'product_name';
 interface SearchProps {
   products: Product[];
   blacklist: string[];
+  flaggedProducts: FlaggedProduct[];
   price: string;
   searchMode: SearchMode;
   showNotification: (message: string) => void;
 }
 
-export const useSearch = ({ products, blacklist, price, searchMode, showNotification }: SearchProps) => {
+export const useSearch = ({ products, blacklist, flaggedProducts, price, searchMode, showNotification }: SearchProps) => {
   const [searchResult, setSearchResult] = useState<{ status: string; products?: Product[]; combination?: ProductWithQuantity[] } | null>(null);
   const [searching, setSearching] = useState(false);
   const [searchCancelled, setSearchCancelled] = useState(false);
@@ -68,6 +69,8 @@ export const useSearch = ({ products, blacklist, price, searchMode, showNotifica
       return;
     }
 
+    const flaggedCodes = new Set(flaggedProducts.map(f => f.code));
+
     if (searchMode === 'product_name' || searchMode === 'product_price') {
       let foundProducts: Product[] = [];
 
@@ -75,11 +78,12 @@ export const useSearch = ({ products, blacklist, price, searchMode, showNotifica
         const searchTerm = price.toLowerCase();
         foundProducts = products.filter(p => {
           const isBlacklisted = blacklist.some((term: string) => p.description.toLowerCase().includes(term.toLowerCase()) || p.code.toLowerCase().includes(term.toLowerCase()));
-          return p.description.toLowerCase().includes(searchTerm) && !isBlacklisted;
+          return p.description.toLowerCase().includes(searchTerm) && !isBlacklisted && !flaggedCodes.has(p.code);
         }).slice(0, 20); // Limit to 20 results
       } else { // product_price
         const desiredPrice = Number(price.replace(',', '.'));
-        const foundProduct = searchNearbyProduct(products, desiredPrice, blacklist);
+        const unflaggedProducts = products.filter(p => !flaggedCodes.has(p.code));
+        const foundProduct = searchNearbyProduct(unflaggedProducts, desiredPrice, blacklist);
         if (foundProduct) {
           foundProducts = [foundProduct];
         }
@@ -113,11 +117,12 @@ export const useSearch = ({ products, blacklist, price, searchMode, showNotifica
       const allProducts = products;
       const afterPreviouslyFound = allProducts.filter(p => !currentPreviouslyFound.has(p.code));
       const afterStock = afterPreviouslyFound.filter(p => p.quantity >= 0.001);
-      const afterBlacklist = afterStock.filter(p => !blacklist.some(term => p.description.toLowerCase().includes(term.toLowerCase()) || p.code.toLowerCase().includes(term.toLowerCase())));
+      const afterFlagged = afterStock.filter(p => !flaggedCodes.has(p.code));
+      const afterBlacklist = afterFlagged.filter(p => !blacklist.some(term => p.description.toLowerCase().includes(term.toLowerCase()) || p.code.toLowerCase().includes(term.toLowerCase())));
       const afterPrice = afterBlacklist.filter(p => (p.salePrice ?? 0) > 0);
       const candidates = afterPrice.sort((a, b) => (b.salePrice ?? 0) - (a.salePrice ?? 0));
 
-      console.log(`[useSearch] Filter breakdown: total=${allProducts.length}, afterPrevFound=${afterPreviouslyFound.length}, afterStock=${afterStock.length}, afterBlacklist=${afterBlacklist.length}, afterPrice=${afterPrice.length}, final=${candidates.length}`);
+      console.log(`[useSearch] Filter breakdown: total=${allProducts.length}, afterPrevFound=${afterPreviouslyFound.length}, afterStock=${afterStock.length}, afterFlagged=${afterFlagged.length}, afterBlacklist=${afterBlacklist.length}, afterPrice=${afterPrice.length}, final=${candidates.length}`);
 
       const filteredProducts = candidates;
 

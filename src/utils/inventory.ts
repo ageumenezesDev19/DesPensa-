@@ -18,6 +18,16 @@ export interface Product {
   elo?: string;
 }
 
+export interface FlaggedProduct {
+  code: string;
+  description: string;
+  flaggedAt: string; // ISO date string
+}
+
+export interface ProfileSettings {
+  flagFunctionEnabled: boolean;
+}
+
 /**
  * Withdraws a product from the stock.
  * This is a placeholder and needs to be implemented with proper state management.

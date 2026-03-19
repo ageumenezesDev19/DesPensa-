@@ -1,5 +1,5 @@
 import { useStorage } from './useStorage';
-import { Product } from '../utils/inventory';
+import { Product, FlaggedProduct } from '../utils/inventory';
 import { processData } from '../utils/db_utils';
 import { useEffect } from 'react';
 import { Withdrawn } from '../components/WithdrawnTable';
@@ -8,6 +8,7 @@ export const useInventory = () => {
   const [products, setProducts] = useStorage<Product[]>('products', []);
   const [withdrawn, setWithdrawn] = useStorage<Withdrawn[]>('withdrawn', []);
   const [blacklist, setBlacklist] = useStorage<string[]>('blacklist', []);
+  const [flaggedProducts, setFlaggedProducts] = useStorage<FlaggedProduct[]>('flagged', []);
 
   // Normalize numeric fields if they were stored as strings (legacy or different environment)
   useEffect(() => {
@@ -34,5 +35,7 @@ export const useInventory = () => {
     setWithdrawn,
     blacklist,
     setBlacklist,
+    flaggedProducts,
+    setFlaggedProducts,
   };
 };

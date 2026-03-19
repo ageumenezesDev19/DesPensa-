@@ -13,9 +13,12 @@ export interface Withdrawn {
 interface Props {
   products: Withdrawn[];
   handleDelete: (id: string) => void;
+  handleFlag: (product: Product) => void;
+  flagFunctionEnabled: boolean;
+  flaggedCodes: Set<string>;
 }
 
-const WithdrawnTable: React.FC<Props> = ({ products, handleDelete }) => {
+const WithdrawnTable: React.FC<Props> = ({ products, handleDelete, handleFlag, flagFunctionEnabled, flaggedCodes }) => {
   const { t, i18n } = useTranslation();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
@@ -176,6 +179,15 @@ const WithdrawnTable: React.FC<Props> = ({ products, handleDelete }) => {
                   <td>{p.date ? new Date(p.date.split(" ")[0] + 'T00:00:00').toLocaleDateString(currentLang) : '---'}</td>
                   <td>
                     <button className="delete-btn" onClick={() => handleDelete(p.id)}>{t('withdrawn.revert', 'Reverter')}</button>
+                    {flagFunctionEnabled && (
+                      <button
+                        className={`flag-btn${flaggedCodes.has(p.product?.code) ? ' flagged' : ''}`}
+                        onClick={() => handleFlag(p.product)}
+                        title={t('withdrawn.flag', 'Sinalizar produto')}
+                      >
+                        🚩
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

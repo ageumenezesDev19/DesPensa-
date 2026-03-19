@@ -11,9 +11,11 @@ export const BlacklistView: React.FC = () => {
     setBlacklist,
     setLoading,
     handleLoadBlacklist,
-    showNotification
+    showNotification,
+    flaggedProducts,
+    handleUnflagProduct,
+    activeProfileSettings,
   } = useInventoryContext();
-
 
   return (
     <>
@@ -29,6 +31,9 @@ export const BlacklistView: React.FC = () => {
         blacklist={blacklist}
         setBlacklist={setBlacklist}
         showNotification={showNotification}
+        flaggedProducts={flaggedProducts}
+        onUnflag={handleUnflagProduct}
+        flagFunctionEnabled={activeProfileSettings.flagFunctionEnabled}
       />
     </>
   );

@@ -114,6 +114,28 @@
           color: white;
         }
         }
+
+        .flag-btn {
+          background-color: transparent;
+          border: 1px solid #c00;
+          color: #c00;
+          border-radius: 8px;
+          cursor: pointer;
+          padding: 0.4rem;
+          margin-left: 0.4rem;
+          transition: background-color 0.2s, color 0.2s;
+          font-size: 0.9rem;
+
+          &:hover {
+            background-color: #c00;
+            color: white;
+          }
+
+          &.flagged {
+            background-color: #c00;
+            color: white;
+          }
+        }
       }
     }
   }

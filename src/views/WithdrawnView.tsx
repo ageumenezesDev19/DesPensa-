@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import FileUpload from '../components/FileUpload';
 import WithdrawnTable from '../components/WithdrawnTable';
 import { useInventoryContext } from '../context/InventoryContext';
@@ -10,8 +10,16 @@ export const WithdrawnView: React.FC = () => {
     withdrawn,
     setLoading,
     handleLoadWithdrawn,
-    handleDeleteWithdrawn
+    handleDeleteWithdrawn,
+    handleFlagProduct,
+    flaggedProducts,
+    activeProfileSettings,
   } = useInventoryContext();
+
+  const flaggedCodes = useMemo(
+    () => new Set(flaggedProducts.map(f => f.code)),
+    [flaggedProducts]
+  );
 
   return (
     <>
@@ -23,7 +31,13 @@ export const WithdrawnView: React.FC = () => {
           accept=".csv"
         />
       </div>
-      <WithdrawnTable products={withdrawn} handleDelete={handleDeleteWithdrawn} />
+      <WithdrawnTable
+        products={withdrawn}
+        handleDelete={handleDeleteWithdrawn}
+        handleFlag={handleFlagProduct}
+        flagFunctionEnabled={activeProfileSettings.flagFunctionEnabled}
+        flaggedCodes={flaggedCodes}
+      />
     </>
   );
 };
