@@ -1,11 +1,35 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { hasPortugueseData, migrateProfileData } from '../utils/migration';
+import { ProfileSettings } from '../utils/inventory';
 
 const PROFILES_KEY = 'user_profiles';
 const ACTIVE_PROFILE_KEY = 'active_user_profile';
 const DEFAULT_PROFILE = 'Default';
-const PROFILE_DATA_KEYS = ['products', 'withdrawn', 'blacklist'];
+const PROFILE_DATA_KEYS = ['products', 'withdrawn', 'blacklist', 'flagged', 'settings'];
+
+const getProfileSettings = (profileName: string): ProfileSettings => {
+  try {
+    const raw = window.localStorage.getItem(`profile_${profileName}_settings`);
+    if (raw) return { flagFunctionEnabled: false, ...JSON.parse(raw) };
+  } catch {}
+  return { flagFunctionEnabled: false };
+};
+
+const saveProfileSettings = async (profileName: string, settings: ProfileSettings) => {
+  const key = `profile_${profileName}_settings`;
+  const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+  if (isTauri) {
+    try {
+      const fs = await import('@tauri-apps/plugin-fs');
+      await fs.writeTextFile(`${key}.json`, JSON.stringify(settings), { baseDir: fs.BaseDirectory.AppLocalData });
+      return;
+    } catch (e) {
+      console.warn('[saveProfileSettings] Tauri write failed, falling back:', e);
+    }
+  }
+  window.localStorage.setItem(key, JSON.stringify(settings));
+};
 
 // Helper to trigger file download
 const downloadFile = async (filename: string, content: string) => {
@@ -54,6 +78,7 @@ export function useProfiles() {
   const { t } = useTranslation();
   const [profiles, setProfiles] = useState<string[]>([]);
   const [activeProfile, setActiveProfileState] = useState<string>(DEFAULT_PROFILE);
+  const [activeProfileSettings, setActiveProfileSettingsState] = useState<ProfileSettings>({ flagFunctionEnabled: false });
 
   const refreshProfiles = useCallback(() => {
     try {
@@ -76,6 +101,7 @@ export function useProfiles() {
         window.localStorage.setItem(ACTIVE_PROFILE_KEY, newActive);
       }
       setActiveProfileState(initialActive);
+      setActiveProfileSettingsState(getProfileSettings(initialActive));
 
       // check if initial active profile has Portuguese data
       if (hasPortugueseData(initialActive)) {
@@ -86,6 +112,7 @@ export function useProfiles() {
       console.error("Failed to load profiles from localStorage.", error);
       setProfiles([DEFAULT_PROFILE]);
       setActiveProfileState(DEFAULT_PROFILE);
+      setActiveProfileSettingsState({ flagFunctionEnabled: false });
       window.localStorage.setItem(PROFILES_KEY, JSON.stringify([DEFAULT_PROFILE]));
       window.localStorage.setItem(ACTIVE_PROFILE_KEY, DEFAULT_PROFILE);
     }
@@ -105,6 +132,7 @@ export function useProfiles() {
 
         window.localStorage.setItem(ACTIVE_PROFILE_KEY, profileName);
         setActiveProfileState(profileName);
+        setActiveProfileSettingsState(getProfileSettings(profileName));
         window.dispatchEvent(new CustomEvent('profileChanged'));
       } catch (error) {
         console.error(`Failed to set active profile to "${profileName}".`, error);
@@ -112,9 +140,25 @@ export function useProfiles() {
     }
   }, [profiles, t]);
 
-  const createProfile = useCallback((profileName: string) => {
+  const updateActiveProfileSettings = useCallback(async (settings: ProfileSettings) => {
+    await saveProfileSettings(activeProfile, settings);
+    setActiveProfileSettingsState(settings);
+    window.dispatchEvent(new CustomEvent('profileSettingsChanged'));
+  }, [activeProfile]);
+
+  useEffect(() => {
+    const handleSettingsChanged = () => {
+      const storedActive = window.localStorage.getItem(ACTIVE_PROFILE_KEY) || DEFAULT_PROFILE;
+      setActiveProfileSettingsState(getProfileSettings(storedActive));
+    };
+    window.addEventListener('profileSettingsChanged', handleSettingsChanged);
+    return () => window.removeEventListener('profileSettingsChanged', handleSettingsChanged);
+  }, []);
+
+  const createProfile = useCallback((profileName: string, settings: ProfileSettings = { flagFunctionEnabled: false }) => {
     if (profileName && !profiles.includes(profileName)) {
       try {
+        window.localStorage.setItem(`profile_${profileName}_settings`, JSON.stringify(settings));
         const newProfiles = [...profiles, profileName];
         window.localStorage.setItem(PROFILES_KEY, JSON.stringify(newProfiles));
         window.location.reload();
@@ -323,5 +367,5 @@ export function useProfiles() {
     }
   }, [profiles, activeProfile]);
 
-  return { profiles, activeProfile, setActiveProfile, createProfile, deleteProfile, backupProfile, restoreProfile, editProfileName };
+  return { profiles, activeProfile, setActiveProfile, createProfile, deleteProfile, backupProfile, restoreProfile, editProfileName, activeProfileSettings, updateActiveProfileSettings };
 }

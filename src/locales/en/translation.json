@@ -86,7 +86,8 @@
     },
     "revert": "Revert",
     "previousDay": "< Previous Day",
-    "nextDay": "Next Day >"
+    "nextDay": "Next Day >",
+    "flag": "Flag product"
   },
   "blacklist": {
     "importTxt": "Import blacklist.txt",
@@ -120,7 +121,17 @@
     "deleteWarning": "All associated data will be permanently lost.",
     "confirmDelete": "Yes, Delete",
     "backupEmpty": "Backup of profile \"{{name}}\" created, but profile is empty.",
-    "backupSuccess": "Backup of profile \"{{name}}\" created successfully!"
+    "backupSuccess": "Backup of profile \"{{name}}\" created successfully!",
+    "flagFunctionLabel": "Alert Function"
+  },
+  "flagged": {
+    "sectionTitle": "Useless Products",
+    "empty": "No flagged products.",
+    "unflag": "Remove",
+    "productFlagged": "Product {{name}} flagged.",
+    "productUnflagged": "Flag removed.",
+    "exportPdf": "Export PDF",
+    "flaggedAt": "Flagged on"
   },
   "common": {
     "confirm": "Confirm",

@@ -19,11 +19,14 @@ export const ProfileManagementModal: React.FC<Props> = ({ onClose }) => {
     deleteProfile,
     backupProfile,
     restoreProfile,
-    editProfileName
+    editProfileName,
+    activeProfileSettings,
+    updateActiveProfileSettings,
   } = useProfiles();
 
   const { showNotification } = useNotification();
   const [newProfileName, setNewProfileName] = useState('');
+  const [newProfileFlagEnabled, setNewProfileFlagEnabled] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [editingProfile, setEditingProfile] = useState<string | null>(null);
   const [editingProfileName, setEditingProfileName] = useState('');
@@ -39,8 +42,9 @@ export const ProfileManagementModal: React.FC<Props> = ({ onClose }) => {
 
   const handleCreate = () => {
     if (newProfileName.trim()) {
-      createProfile(newProfileName.trim());
+      createProfile(newProfileName.trim(), { flagFunctionEnabled: newProfileFlagEnabled });
       setNewProfileName('');
+      setNewProfileFlagEnabled(false);
     }
   };
 
@@ -123,37 +127,49 @@ export const ProfileManagementModal: React.FC<Props> = ({ onClose }) => {
                       </div>
                     ) : (
                       <>
-                        <div className="profile-info">
-                          <span className="profile-name">
-                            {profile}
-                          </span>
-                          {profile === activeProfile && <span className="badge active-badge">{t('profile.active', 'Ativo')}</span>}
+                        <div className="profile-main-row">
+                          <div className="profile-info">
+                            <span className="profile-name">
+                              {profile}
+                            </span>
+                            {profile === activeProfile && <span className="badge active-badge">{t('profile.active', 'Ativo')}</span>}
+                          </div>
+
+                          <div className="profile-actions">
+                            <button
+                              className="icon-btn edit"
+                              onClick={() => setEditingProfile(profile)}
+                              title={t('profile.edit', 'Renomear perfil')}
+                            >
+                              ✎
+                            </button>
+                            <button
+                              className="icon-btn backup"
+                              onClick={() => handleBackup(profile)}
+                              title={t('profile.backup', 'Fazer backup deste perfil')}
+                            >
+                              ⬇
+                            </button>
+                            <button
+                              className="icon-btn delete"
+                              onClick={() => handleDeleteClick(profile)}
+                              disabled={profile === 'Default' || profile === activeProfile}
+                              title={profile === 'Default' || profile === activeProfile ? t('profile.cannotDelete', "Não é possível excluir este perfil") : t('profile.delete', "Excluir perfil")}
+                            >
+                              🗑
+                            </button>
+                          </div>
                         </div>
-                        
-                        <div className="profile-actions">
-                          <button 
-                            className="icon-btn edit" 
-                            onClick={() => setEditingProfile(profile)} 
-                            title={t('profile.edit', 'Renomear perfil')}
-                          >
-                            ✎
-                          </button>
-                          <button 
-                            className="icon-btn backup" 
-                            onClick={() => handleBackup(profile)} 
-                            title={t('profile.backup', 'Fazer backup deste perfil')}
-                          >
-                            ⬇
-                          </button>
-                          <button 
-                            className="icon-btn delete" 
-                            onClick={() => handleDeleteClick(profile)}
-                            disabled={profile === 'Default' || profile === activeProfile}
-                            title={profile === 'Default' || profile === activeProfile ? t('profile.cannotDelete', "Não é possível excluir este perfil") : t('profile.delete', "Excluir perfil")}
-                          >
-                            🗑
-                          </button>
-                        </div>
+                        {profile === activeProfile && (
+                          <label className="flag-function-toggle small">
+                            <input
+                              type="checkbox"
+                              checked={activeProfileSettings.flagFunctionEnabled}
+                              onChange={(e) => updateActiveProfileSettings({ flagFunctionEnabled: e.target.checked })}
+                            />
+                            {t('profile.flagFunctionLabel', 'Função Alerta')}
+                          </label>
+                        )}
                       </>
                     )}
                   </div>
@@ -176,6 +192,14 @@ export const ProfileManagementModal: React.FC<Props> = ({ onClose }) => {
                   {t('profile.create', 'Criar Novo')}
                 </button>
               </div>
+              <label className="flag-function-toggle">
+                <input
+                  type="checkbox"
+                  checked={newProfileFlagEnabled}
+                  onChange={(e) => setNewProfileFlagEnabled(e.target.checked)}
+                />
+                {t('profile.flagFunctionLabel', 'Função Alerta')}
+              </label>
 
               <div className="divider-text">{t('profile.or', 'ou')}</div>
 

@@ -69,13 +69,13 @@
 
   .profile-item {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
     padding: 0.75rem 1rem;
     border-radius: 8px;
     background-color: var(--card-bg);
     border: 1px solid var(--border-color);
     transition: all 0.2s;
+    gap: 0.4rem;
 
     &.active {
       border-color: var(--primary-color);
@@ -85,6 +85,12 @@
     &:hover:not(.active) {
       background-color: var(--background-color);
       border-color: var(--border-color);
+    }
+
+    .profile-main-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     .profile-info {
@@ -268,5 +274,40 @@
       margin: 0.25rem 0 0;
       text-align: center;
     }
+
+    .flag-function-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      font-size: 0.9rem;
+      color: var(--font-color);
+      cursor: pointer;
+
+      input[type='checkbox'] {
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+        accent-color: var(--primary-color);
+      }
+    }
+  }
+}
+
+.profile-item .flag-function-toggle.small {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--font-color);
+  opacity: 0.85;
+  cursor: pointer;
+  padding-left: 0.1rem;
+
+  input[type='checkbox'] {
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    accent-color: var(--primary-color);
   }
 }

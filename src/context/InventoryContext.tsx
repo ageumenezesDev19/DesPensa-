@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
-import { Product } from "../utils/inventory";
+import { Product, FlaggedProduct, ProfileSettings } from "../utils/inventory";
 import { Withdrawn } from "../components/WithdrawnTable";
 import { useNotification } from "../hooks/useNotification";
 import { useInventory } from "../hooks/useInventory";
+import { useProfiles } from "../hooks/useProfiles";
 import { useViewManager } from "../hooks/useViewManager";
 import { useFileHandlers } from "../hooks/useFileHandlers";
 import { useSearch, SearchMode } from "../hooks/useSearch";
@@ -19,10 +20,12 @@ interface InventoryContextType {
   products: Product[];
   withdrawn: Withdrawn[];
   blacklist: string[];
+  flaggedProducts: FlaggedProduct[];
+  activeProfileSettings: ProfileSettings;
   loading: boolean;
   notification: string | null;
   view: string;
-  
+
   // Search State
   searchResult: { status: string; products?: Product[]; combination?: ProductWithQuantity[] } | null;
   searching: boolean;
@@ -30,11 +33,12 @@ interface InventoryContextType {
   price: string;
   searchMode: SearchMode;
   focusSearchInput: boolean;
-  
+
   // Setters
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
   setWithdrawn: React.Dispatch<React.SetStateAction<Withdrawn[]>>;
   setBlacklist: React.Dispatch<React.SetStateAction<string[]>>;
+  setFlaggedProducts: React.Dispatch<React.SetStateAction<FlaggedProduct[]>>;
   setLoading: (loading: boolean) => void;
   setView: (view: any) => void;
   setSearchResult: (result: any) => void;
@@ -56,6 +60,9 @@ interface InventoryContextType {
   handleSearch: (isRecalculation?: boolean) => void;
   handleRecalculate: () => void;
   handleCancelSearch: () => void;
+  handleFlagProduct: (product: Product) => void;
+  handleUnflagProduct: (code: string) => void;
+  updateActiveProfileSettings: (settings: ProfileSettings) => Promise<void>;
   showNotification: (message: string) => void;
 }
 
@@ -77,7 +84,8 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [focusSearchInput, setFocusSearchInput] = useState<boolean>(true);
 
   const { notification, showNotification } = useNotification();
-  const { products, setProducts, withdrawn, setWithdrawn, blacklist, setBlacklist } = useInventory();
+  const { products, setProducts, withdrawn, setWithdrawn, blacklist, setBlacklist, flaggedProducts, setFlaggedProducts } = useInventory();
+  const { activeProfileSettings, updateActiveProfileSettings } = useProfiles();
   const { view, setView } = useViewManager("inventory");
 
   const {
@@ -103,6 +111,7 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
   } = useSearch({
     products,
     blacklist,
+    flaggedProducts,
     price,
     searchMode,
     showNotification,
@@ -194,6 +203,19 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
     setSearchResult(null);
   };
 
+  const handleFlagProduct = (product: Product) => {
+    setFlaggedProducts(prev => {
+      if (prev.some(f => f.code === product.code)) return prev;
+      return [...prev, { code: product.code, description: product.description, flaggedAt: new Date().toISOString() }];
+    });
+    showNotification(t('flagged.productFlagged', { name: product.description }));
+  };
+
+  const handleUnflagProduct = (code: string) => {
+    setFlaggedProducts(prev => prev.filter(f => f.code !== code));
+    showNotification(t('flagged.productUnflagged'));
+  };
+
   const handleDeleteProduct = (product: Product) => {
     setProducts(prevProducts => prevProducts.filter(p => p.code !== product.code));
   };
@@ -250,6 +272,8 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
     products,
     withdrawn,
     blacklist,
+    flaggedProducts,
+    activeProfileSettings,
     loading,
     notification,
     view,
@@ -262,6 +286,7 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
     setProducts,
     setWithdrawn,
     setBlacklist,
+    setFlaggedProducts,
     setLoading,
     setView,
     setSearchResult,
@@ -281,6 +306,9 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
     handleSearch,
     handleRecalculate,
     handleCancelSearch,
+    handleFlagProduct,
+    handleUnflagProduct,
+    updateActiveProfileSettings,
     showNotification
   };
 

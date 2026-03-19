@@ -86,7 +86,8 @@
     },
     "revert": "Reverter",
     "previousDay": "< Dia Anterior",
-    "nextDay": "Próximo Dia >"
+    "nextDay": "Próximo Dia >",
+    "flag": "Sinalizar produto"
   },
   "blacklist": {
     "importTxt": "Importar lista_negra.txt",
@@ -120,7 +121,17 @@
     "deleteWarning": "Todos os dados associados serão perdidos permanentemente.",
     "confirmDelete": "Sim, Excluir",
     "backupEmpty": "Backup do perfil \"{{name}}\" criado, mas o perfil está vazio.",
-    "backupSuccess": "Backup do perfil \"{{name}}\" criado com sucesso!"
+    "backupSuccess": "Backup do perfil \"{{name}}\" criado com sucesso!",
+    "flagFunctionLabel": "Função Alerta"
+  },
+  "flagged": {
+    "sectionTitle": "Produtos Inutilizados",
+    "empty": "Nenhum produto sinalizado.",
+    "unflag": "Remover",
+    "productFlagged": "Produto {{name}} sinalizado.",
+    "productUnflagged": "Sinalização removida.",
+    "exportPdf": "Exportar PDF",
+    "flaggedAt": "Sinalizado em"
   },
   "common": {
     "confirm": "Confirmar",

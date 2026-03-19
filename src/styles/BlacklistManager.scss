@@ -47,6 +47,57 @@
     &:hover { background: var(--primary-color-hover); }
   }
 
+  .flagged-section {
+    margin-top: 2rem;
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+
+    .flagged-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      h2 { margin: 0; }
+    }
+
+    .export-pdf-btn {
+      margin-left: 0;
+      background: var(--primary-color);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.85rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+      &:hover { background: var(--primary-color-hover); }
+    }
+
+    h2 { margin-top: 0; }
+
+    .empty-flagged {
+      color: var(--font-color);
+      opacity: 0.6;
+      font-style: italic;
+    }
+
+    ul li {
+      .flagged-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+      }
+      .flagged-code {
+        font-size: 0.8rem;
+        opacity: 0.6;
+      }
+      .flagged-description {
+        font-weight: 500;
+      }
+    }
+  }
+
   @media (max-width: 600px) {
     display: flex;
     flex-direction: column;
