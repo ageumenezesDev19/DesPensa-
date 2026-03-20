@@ -40,6 +40,9 @@ export function loadHtmlDataFromString(html: string): { df: any[] } {
       'csosn': 'CSOSN',
       'st': 'ST',  // Keep original name, don't convert
       'elo': 'ELO',
+      'cód.ncm': 'Cód.NCM',
+      'cod.ncm': 'Cód.NCM',
+      'ncm': 'Cód.NCM',
     };
     return map[sanitized] || col;
   };
@@ -91,6 +94,7 @@ export function loadHtmlDataFromString(html: string): { df: any[] } {
         salePrice: rawObj['Preço Venda'] || '0',
         st: rawObj['ST'] || rawObj['CSOSN'] || '',  // Support both formats
         elo: rawObj['ELO'] || '',
+        ncm: rawObj['Cód.NCM'] || '',
       };
     }).get().filter(item => item !== null && item.code);
     
@@ -192,7 +196,7 @@ export function processData(df: any[]): any[] {
       }
     }
     return newRow;
-  }).filter(row => row.quantity > 0 && row.salePrice > 0);
+  }).filter(row => row.quantity > 0 && row.salePrice > 0 && row.ncm);
 }
 
 // Function to parse withdrawn CSV from string
