@@ -6,6 +6,9 @@ export function loadHtmlDataFromString(html: string): { df: any[] } {
   console.log(`[loadHtmlDataFromString] Initial HTML size: ${html.length} chars`);
   
   const normalizeColName = (col: string): string => {
+    // Replace non-breaking spaces and other special whitespace characters with normal space
+    const sanitized = col.replace(/[\xA0\s]+/g, ' ').trim().toLowerCase();
+    
     const map: { [key: string]: string } = {
       'cód. barras': 'Cód.Barras',
       'cód.barras': 'Cód.Barras',
@@ -38,7 +41,7 @@ export function loadHtmlDataFromString(html: string): { df: any[] } {
       'st': 'ST',  // Keep original name, don't convert
       'elo': 'ELO',
     };
-    return map[col.toLowerCase()] || col;
+    return map[sanitized] || col;
   };
 
   // Pre-process HTML to remove junk before the table
