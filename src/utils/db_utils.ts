@@ -192,7 +192,7 @@ export function processData(df: any[]): any[] {
       }
     }
     return newRow;
-  }).filter(row => row.quantity > 0);
+  }).filter(row => row.quantity > 0 && row.salePrice > 0);
 }
 
 // Function to parse withdrawn CSV from string

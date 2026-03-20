@@ -53,17 +53,20 @@ const SearchBar: React.FC = () => {
   }, [focusInput, setFocusInput]);
 
   const handleCopy = async (product: any, index: number) => {
-    const isFractional = product.usedQuantity % 1 !== 0;
-    const includeQuantity = isFractional || product.usedQuantity > 1;
+    const qty = product.usedQuantity;
+    const isFractional = qty !== undefined && qty % 1 !== 0;
+    const includeQuantity = qty !== undefined && (isFractional || qty > 1);
     let quantityStr = '';
     if (includeQuantity) {
       if (isFractional) {
-        quantityStr = product.usedQuantity.toFixed(3).replace('.', ',');
+        quantityStr = qty.toFixed(3).replace('.', ',');
       } else {
-        quantityStr = product.usedQuantity.toString();
+        quantityStr = qty.toString();
       }
     }
-    const textToCopy = includeQuantity ? `${quantityStr}*${product.description}` : product.description;
+    // Normalizar U+00A0 (non-breaking space do HTML &nbsp;) para espaço normal — compatibilidade com GDOOR
+    const rawText = includeQuantity ? `${quantityStr}*${product.description}` : product.description;
+    const textToCopy = rawText.replace(/\u00A0/g, ' ');
     try {
       await navigator.clipboard.writeText(textToCopy);
       setCopiedIndex(index);
