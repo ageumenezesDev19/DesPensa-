@@ -47,7 +47,7 @@ interface InventoryContextType {
   setFocusSearchInput: (focus: boolean) => void;
 
   // Actions
-  handleLoadProducts: (htmlContent: string, mode: ImportMode) => void;
+  handleLoadProducts: (htmlContent: string, mode: ImportMode, ignoreNcm?: boolean) => void;
   handleLoadWithdrawn: (csvContent: string) => void;
   handleLoadBlacklist: (textContent: string) => void;
   handleDownload: (filename: string, content: string) => void;

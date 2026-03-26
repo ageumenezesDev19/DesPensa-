@@ -1,5 +1,4 @@
 import {
-  processData,
   loadHtmlDataFromString,
   loadWithdrawnFromString
 } from '../utils/db_utils';
@@ -29,11 +28,10 @@ export const useFileHandlers = ({
   t,
 }: FileHandlerProps) => {
 
-  const handleLoadProducts = (htmlContent: string, mode: ImportMode) => {
+  const handleLoadProducts = (htmlContent: string, mode: ImportMode, ignoreNcm: boolean = false) => {
     setLoading(true);
     try {
-      const { df } = loadHtmlDataFromString(htmlContent);
-      const processedData = processData(df);
+      const { df: processedData } = loadHtmlDataFromString(htmlContent, { ignoreNcm });
 
       console.log(`[handleLoadProducts] Loaded ${processedData.length} products`);
       console.log(`[handleLoadProducts] First product:`, processedData[0]);

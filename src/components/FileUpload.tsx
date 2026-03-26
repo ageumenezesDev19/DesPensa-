@@ -7,7 +7,7 @@ export type ImportMode = 'add' | 'replace';
 
 interface Props {
   setLoading: (loading: boolean) => void;
-  onFileUpload: (content: string, mode: ImportMode) => void;
+  onFileUpload: (content: string, mode: ImportMode, ignoreNcm: boolean) => void;
   label: string;
   accept: string;
 }
@@ -37,9 +37,9 @@ const FileUpload: React.FC<Props> = ({ setLoading, onFileUpload, label, accept }
     }
   };
 
-  const handleConfirmImport = (mode: ImportMode) => {
+  const handleConfirmImport = (mode: ImportMode, ignoreNcm: boolean) => {
     if (fileContent) {
-      onFileUpload(fileContent, mode);
+      onFileUpload(fileContent, mode, ignoreNcm);
     }
     setShowModal(false);
     setFileContent(null);
