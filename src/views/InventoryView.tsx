@@ -20,7 +20,7 @@ export const InventoryView: React.FC = () => {
             <div className="controls">
                 <FileUpload
                     setLoading={setLoading}
-                    onFileUpload={(content, mode) => handleLoadProducts(content, mode as ImportMode)}
+                    onFileUpload={(content, mode, ignoreNcm) => handleLoadProducts(content, mode as ImportMode, ignoreNcm)}
                     label={t('inventory.importHtml', 'Importar produtos.html')}
                     accept=".html"
                 />
