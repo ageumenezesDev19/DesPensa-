@@ -27,6 +27,7 @@ export const ProfileManagementModal: React.FC<Props> = ({ onClose }) => {
   const { showNotification } = useNotification();
   const [newProfileName, setNewProfileName] = useState('');
   const [newProfileFlagEnabled, setNewProfileFlagEnabled] = useState(false);
+  const [newProfileQuantityLimit, setNewProfileQuantityLimit] = useState<number | undefined>(undefined);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [editingProfile, setEditingProfile] = useState<string | null>(null);
   const [editingProfileName, setEditingProfileName] = useState('');
@@ -42,9 +43,10 @@ export const ProfileManagementModal: React.FC<Props> = ({ onClose }) => {
 
   const handleCreate = () => {
     if (newProfileName.trim()) {
-      createProfile(newProfileName.trim(), { flagFunctionEnabled: newProfileFlagEnabled });
+      createProfile(newProfileName.trim(), { flagFunctionEnabled: newProfileFlagEnabled, quantityLimit: newProfileQuantityLimit });
       setNewProfileName('');
       setNewProfileFlagEnabled(false);
+      setNewProfileQuantityLimit(undefined);
     }
   };
 
@@ -161,14 +163,46 @@ export const ProfileManagementModal: React.FC<Props> = ({ onClose }) => {
                           </div>
                         </div>
                         {profile === activeProfile && (
-                          <label className="flag-function-toggle small">
-                            <input
-                              type="checkbox"
-                              checked={activeProfileSettings.flagFunctionEnabled}
-                              onChange={(e) => updateActiveProfileSettings({ flagFunctionEnabled: e.target.checked })}
-                            />
-                            {t('profile.flagFunctionLabel', 'Função Alerta')}
-                          </label>
+                          <>
+                            <label className="flag-function-toggle small">
+                              <input
+                                type="checkbox"
+                                checked={activeProfileSettings.flagFunctionEnabled}
+                                onChange={(e) => updateActiveProfileSettings({ ...activeProfileSettings, flagFunctionEnabled: e.target.checked })}
+                              />
+                              {t('profile.flagFunctionLabel', 'Função Alerta')}
+                            </label>
+                            <label className="flag-function-toggle small">
+                              <input
+                                type="checkbox"
+                                checked={activeProfileSettings.quantityLimit !== undefined}
+                                onChange={(e) =>
+                                  updateActiveProfileSettings({
+                                    ...activeProfileSettings,
+                                    quantityLimit: e.target.checked ? 10 : undefined,
+                                  })
+                                }
+                              />
+                              {t('profile.quantityLimitLabel', 'Limitar Quantidade')}
+                            </label>
+                            {activeProfileSettings.quantityLimit !== undefined && (
+                              <div className="quantity-limit-input small">
+                                <span className="qty-limit-label">{t('profile.quantityLimitMax', 'Máx. por produto')}</span>
+                                <input
+                                  type="number"
+                                  min={1}
+                                  max={9999}
+                                  value={activeProfileSettings.quantityLimit}
+                                  onChange={(e) =>
+                                    updateActiveProfileSettings({
+                                      ...activeProfileSettings,
+                                      quantityLimit: Math.max(1, Number(e.target.value) || 1),
+                                    })
+                                  }
+                                />
+                              </div>
+                            )}
+                          </>
                         )}
                       </>
                     )}
@@ -200,6 +234,26 @@ export const ProfileManagementModal: React.FC<Props> = ({ onClose }) => {
                 />
                 {t('profile.flagFunctionLabel', 'Função Alerta')}
               </label>
+              <label className="flag-function-toggle">
+                <input
+                  type="checkbox"
+                  checked={newProfileQuantityLimit !== undefined}
+                  onChange={(e) => setNewProfileQuantityLimit(e.target.checked ? 10 : undefined)}
+                />
+                {t('profile.quantityLimitLabel', 'Limitar Quantidade')}
+              </label>
+              {newProfileQuantityLimit !== undefined && (
+                <div className="quantity-limit-input">
+                  <span className="qty-limit-label">{t('profile.quantityLimitMax', 'Máx. por produto')}</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={9999}
+                    value={newProfileQuantityLimit}
+                    onChange={(e) => setNewProfileQuantityLimit(Math.max(1, Number(e.target.value) || 1))}
+                  />
+                </div>
+              )}
 
               <div className="divider-text">{t('profile.or', 'ou')}</div>
 

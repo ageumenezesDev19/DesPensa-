@@ -115,6 +115,7 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
     price,
     searchMode,
     showNotification,
+    activeProfileSettings,
   });
 
   const handleWithdraw = (productToWithdraw: Product, quantity: number = 1) => {

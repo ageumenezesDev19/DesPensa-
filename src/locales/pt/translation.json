@@ -122,7 +122,9 @@
     "confirmDelete": "Sim, Excluir",
     "backupEmpty": "Backup do perfil \"{{name}}\" criado, mas o perfil está vazio.",
     "backupSuccess": "Backup do perfil \"{{name}}\" criado com sucesso!",
-    "flagFunctionLabel": "Função Alerta"
+    "flagFunctionLabel": "Função Alerta",
+    "quantityLimitLabel": "Limitar Quantidade",
+    "quantityLimitMax": "Máx. por produto"
   },
   "flagged": {
     "sectionTitle": "Produtos Inutilizados",

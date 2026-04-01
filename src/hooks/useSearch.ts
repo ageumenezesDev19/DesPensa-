@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Product, FlaggedProduct } from '../utils/inventory';
+import { Product, FlaggedProduct, ProfileSettings } from '../utils/inventory';
 import { searchNearbyProduct } from '../utils/search';
 import { ProductWithQuantity } from '../context/InventoryContext';
 
@@ -12,9 +12,10 @@ interface SearchProps {
   price: string;
   searchMode: SearchMode;
   showNotification: (message: string) => void;
+  activeProfileSettings: ProfileSettings;
 }
 
-export const useSearch = ({ products, blacklist, flaggedProducts, price, searchMode, showNotification }: SearchProps) => {
+export const useSearch = ({ products, blacklist, flaggedProducts, price, searchMode, showNotification, activeProfileSettings }: SearchProps) => {
   const [searchResult, setSearchResult] = useState<{ status: string; products?: Product[]; combination?: ProductWithQuantity[] } | null>(null);
   const [searching, setSearching] = useState(false);
   const [searchCancelled, setSearchCancelled] = useState(false);
@@ -152,6 +153,7 @@ export const useSearch = ({ products, blacklist, flaggedProducts, price, searchM
             tolerancia: 0.3,
             used: Array.from(currentPreviouslyFound),
             blacklist,
+            quantityLimit: activeProfileSettings.quantityLimit,
           },
         });
       });
