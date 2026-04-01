@@ -35,7 +35,8 @@ const findCombinationHeuristic = (
   products: Product[],
   targetPrice: number,
   inventory: { [key: string]: number },
-  timeoutMs: number = 2000
+  timeoutMs: number = 2000,
+  quantityLimit?: number
 ): Combination | null => {
   const targetCents = Math.round(targetPrice * 100);
   const productsInCents = new Map<string, number>();
@@ -64,11 +65,13 @@ const findCombinationHeuristic = (
           // Fractional
           const neededQty = remainingCents / priceCents;
           takeQty = Math.min(neededQty, availStock);
+          if (quantityLimit !== undefined) takeQty = Math.min(takeQty, quantityLimit);
           takeQty = Math.floor(takeQty * 1000) / 1000;
        } else {
           // Unit
           const maxUnits = Math.floor(remainingCents / priceCents);
           takeQty = Math.min(maxUnits, availStock);
+          if (quantityLimit !== undefined) takeQty = Math.min(takeQty, quantityLimit);
        }
 
        if (takeQty >= 0.001) {
@@ -129,7 +132,7 @@ self.onmessage = (e: MessageEvent) => {
   const { type, payload } = e.data;
 
   if (type === 'startSearch') {
-    const { df, targetPrice, blacklist } = payload;
+    const { df, targetPrice, blacklist, quantityLimit } = payload;
 
     const productsRaw: Product[] = df.map((p: any) => {
       const priceNum = typeof p.salePrice === 'string' ? parseFloat(p.salePrice.replace(/\./g, '').replace(',', '.')) : Number(p.salePrice);
@@ -165,7 +168,7 @@ self.onmessage = (e: MessageEvent) => {
       });
 
       // Pass the 2 seconds timeout to the heuristic
-      const result = findCombinationHeuristic(filteredProducts, targetPrice, inventory, 2000);
+      const result = findCombinationHeuristic(filteredProducts, targetPrice, inventory, 2000, quantityLimit);
       
       if (result) {
         let isStockValid = true;

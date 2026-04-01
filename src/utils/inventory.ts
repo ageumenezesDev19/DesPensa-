@@ -26,6 +26,7 @@ export interface FlaggedProduct {
 
 export interface ProfileSettings {
   flagFunctionEnabled: boolean;
+  quantityLimit?: number; // undefined = sem limite
 }
 
 /**
