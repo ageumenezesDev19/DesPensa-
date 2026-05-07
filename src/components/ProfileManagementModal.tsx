@@ -202,6 +202,19 @@ export const ProfileManagementModal: React.FC<Props> = ({ onClose }) => {
                                 />
                               </div>
                             )}
+                            <label className="flag-function-toggle small">
+                              <input
+                                type="checkbox"
+                                checked={activeProfileSettings.filterByCsosn === true}
+                                onChange={(e) =>
+                                  updateActiveProfileSettings({
+                                    ...activeProfileSettings,
+                                    filterByCsosn: e.target.checked ? true : undefined,
+                                  })
+                                }
+                              />
+                              {t('profile.filterByCsosnLabel', 'Filtrar CSOSN 500')}
+                            </label>
                           </>
                         )}
                       </>

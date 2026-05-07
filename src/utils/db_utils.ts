@@ -2,7 +2,7 @@ import * as cheerio from 'cheerio';
 // import dayjs from 'dayjs';
 
 // export function loadHtmlDataFromString(html: string): { df: any[] } {
-export function loadHtmlDataFromString(html: string, options?: { ignoreNcm?: boolean }): { df: any[] } {
+export function loadHtmlDataFromString(html: string, options?: { ignoreNcm?: boolean; filterByCsosn?: boolean }): { df: any[] } {
   console.log(`[loadHtmlDataFromString] Initial HTML size: ${html.length} chars`);
   
   const normalizeColName = (col: string): string => {
@@ -99,7 +99,7 @@ export function loadHtmlDataFromString(html: string, options?: { ignoreNcm?: boo
     }).get().filter(item => item !== null && item.code);
     
     console.log(`[loadHtmlDataFromString] Final extracted items parsed: ${df.length}`);
-    df = processData(df, options?.ignoreNcm);
+    df = processData(df, options?.ignoreNcm, options?.filterByCsosn);
     console.log(`[loadHtmlDataFromString] Final processed items: ${df.length}`);
   } else {
     // Fallback to plain text parsing
@@ -160,7 +160,7 @@ export function loadHtmlDataFromString(html: string, options?: { ignoreNcm?: boo
       }).filter(item => item !== null && item.code && item.description);
       
       console.log(`[loadHtmlDataFromString] Final items after fallback: ${df.length}`);
-      df = processData(df, options?.ignoreNcm);
+      df = processData(df, options?.ignoreNcm, options?.filterByCsosn);
       console.log(`[loadHtmlDataFromString] Final processed items after fallback: ${df.length}`);
     } else {
       console.error(`[loadHtmlDataFromString] No headers found in file`);
@@ -170,7 +170,7 @@ export function loadHtmlDataFromString(html: string, options?: { ignoreNcm?: boo
   return { df };
 }
 
-export function processData(df: any[], ignoreNcm: boolean = false): any[] {
+export function processData(df: any[], ignoreNcm: boolean = false, filterByCsosn: boolean = false): any[] {
   const numericFields = ['quantity', 'costPrice', 'profitMargin', 'salePrice'];
   return df.map(row => {
     const newRow = { ...row };
@@ -200,7 +200,7 @@ export function processData(df: any[], ignoreNcm: boolean = false): any[] {
       }
     }
     return newRow;
-  }).filter(row => row.quantity > 0 && row.salePrice > 0 && (ignoreNcm || row.ncm));
+  }).filter(row => row.quantity > 0 && row.salePrice > 0 && (ignoreNcm || row.ncm) && (!filterByCsosn || row.st === '500'));
 }
 
 // Function to parse withdrawn CSV from string
