@@ -27,6 +27,7 @@ export interface FlaggedProduct {
 export interface ProfileSettings {
   flagFunctionEnabled: boolean;
   quantityLimit?: number; // undefined = sem limite
+  filterByCsosn?: boolean; // true = só importa produtos com CSOSN 500
 }
 
 /**

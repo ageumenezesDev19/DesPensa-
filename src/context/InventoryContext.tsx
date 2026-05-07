@@ -89,7 +89,7 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
   const { view, setView } = useViewManager("inventory");
 
   const {
-    handleLoadProducts, handleLoadWithdrawn, handleLoadBlacklist, handleDownload
+    handleLoadProducts: _handleLoadProducts, handleLoadWithdrawn, handleLoadBlacklist, handleDownload
   } = useFileHandlers({
     setLoading,
     setProducts,
@@ -99,6 +99,10 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
     showNotification,
     t,
   });
+
+  const handleLoadProducts = (htmlContent: string, mode: ImportMode, ignoreNcm?: boolean) => {
+    _handleLoadProducts(htmlContent, mode, ignoreNcm ?? false, activeProfileSettings.filterByCsosn ?? false);
+  };
 
   const {
     searchResult,
