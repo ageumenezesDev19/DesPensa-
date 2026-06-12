@@ -124,7 +124,8 @@
     "backupSuccess": "Backup do perfil \"{{name}}\" criado com sucesso!",
     "flagFunctionLabel": "Função Alerta",
     "quantityLimitLabel": "Limitar Quantidade",
-    "quantityLimitMax": "Máx. por produto"
+    "quantityLimitMax": "Máx. por produto",
+    "singleProductResultLabel": "Resultado único por valor"
   },
   "flagged": {
     "sectionTitle": "Produtos Inutilizados",

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Product, FlaggedProduct, ProfileSettings } from '../utils/inventory';
-import { searchNearbyProduct } from '../utils/search';
+import { findSingleProductResult, searchNearbyProduct } from '../utils/search';
 import { ProductWithQuantity } from '../context/InventoryContext';
 
 export type SearchMode = 'combination' | 'product_price' | 'product_name';
@@ -71,6 +71,7 @@ export const useSearch = ({ products, blacklist, flaggedProducts, price, searchM
     }
 
     const flaggedCodes = new Set(flaggedProducts.map(f => f.code));
+    const currentPreviouslyFound = previouslyFoundSet || previouslyFound;
 
     if (searchMode === 'product_name' || searchMode === 'product_price') {
       let foundProducts: Product[] = [];
@@ -83,7 +84,7 @@ export const useSearch = ({ products, blacklist, flaggedProducts, price, searchM
         }).slice(0, 20); // Limit to 20 results
       } else { // product_price
         const desiredPrice = Number(price.replace(',', '.'));
-        const unflaggedProducts = products.filter(p => !flaggedCodes.has(p.code));
+        const unflaggedProducts = products.filter(p => !flaggedCodes.has(p.code) && !currentPreviouslyFound.has(p.code));
         const foundProduct = searchNearbyProduct(unflaggedProducts, desiredPrice, blacklist);
         if (foundProduct) {
           foundProducts = [foundProduct];
@@ -107,7 +108,22 @@ export const useSearch = ({ products, blacklist, flaggedProducts, price, searchM
         return;
       }
 
-      const currentPreviouslyFound = previouslyFoundSet || previouslyFound;
+      if (activeProfileSettings.singleProductResultEnabled) {
+        const singleProductResult = findSingleProductResult(products, desiredPrice, {
+          blacklist,
+          flaggedCodes,
+          previouslyFound: currentPreviouslyFound,
+          quantityLimit: activeProfileSettings.quantityLimit,
+        });
+
+        if (singleProductResult) {
+          setSearchResult({ status: 'ok', combination: [singleProductResult] });
+        } else {
+          setSearchResult({ status: 'not_found' });
+        }
+        setSearching(false);
+        return;
+      }
 
       // Removed fast-path for combination to allow full search
 

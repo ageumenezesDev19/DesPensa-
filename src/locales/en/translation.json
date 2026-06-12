@@ -122,7 +122,11 @@
     "confirmDelete": "Yes, Delete",
     "backupEmpty": "Backup of profile \"{{name}}\" created, but profile is empty.",
     "backupSuccess": "Backup of profile \"{{name}}\" created successfully!",
-    "flagFunctionLabel": "Alert Function"
+    "flagFunctionLabel": "Alert Function",
+    "quantityLimitLabel": "Limit Quantity",
+    "quantityLimitMax": "Max per product",
+    "filterByCsosnLabel": "Filter CSOSN 500",
+    "singleProductResultLabel": "Single result by value"
   },
   "flagged": {
     "sectionTitle": "Useless Products",
