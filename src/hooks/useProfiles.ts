@@ -7,13 +7,14 @@ const PROFILES_KEY = 'user_profiles';
 const ACTIVE_PROFILE_KEY = 'active_user_profile';
 const DEFAULT_PROFILE = 'Default';
 const PROFILE_DATA_KEYS = ['products', 'withdrawn', 'blacklist', 'flagged', 'settings'];
+const DEFAULT_PROFILE_SETTINGS: ProfileSettings = { flagFunctionEnabled: false, singleProductResultEnabled: false };
 
 const getProfileSettings = (profileName: string): ProfileSettings => {
   try {
     const raw = window.localStorage.getItem(`profile_${profileName}_settings`);
-    if (raw) return { flagFunctionEnabled: false, ...JSON.parse(raw) };
+    if (raw) return { ...DEFAULT_PROFILE_SETTINGS, ...JSON.parse(raw) };
   } catch {}
-  return { flagFunctionEnabled: false };
+  return DEFAULT_PROFILE_SETTINGS;
 };
 
 const saveProfileSettings = async (profileName: string, settings: ProfileSettings) => {
@@ -78,7 +79,7 @@ export function useProfiles() {
   const { t } = useTranslation();
   const [profiles, setProfiles] = useState<string[]>([]);
   const [activeProfile, setActiveProfileState] = useState<string>(DEFAULT_PROFILE);
-  const [activeProfileSettings, setActiveProfileSettingsState] = useState<ProfileSettings>({ flagFunctionEnabled: false });
+  const [activeProfileSettings, setActiveProfileSettingsState] = useState<ProfileSettings>(DEFAULT_PROFILE_SETTINGS);
 
   const refreshProfiles = useCallback(() => {
     try {
@@ -112,7 +113,7 @@ export function useProfiles() {
       console.error("Failed to load profiles from localStorage.", error);
       setProfiles([DEFAULT_PROFILE]);
       setActiveProfileState(DEFAULT_PROFILE);
-      setActiveProfileSettingsState({ flagFunctionEnabled: false });
+      setActiveProfileSettingsState(DEFAULT_PROFILE_SETTINGS);
       window.localStorage.setItem(PROFILES_KEY, JSON.stringify([DEFAULT_PROFILE]));
       window.localStorage.setItem(ACTIVE_PROFILE_KEY, DEFAULT_PROFILE);
     }
@@ -155,7 +156,7 @@ export function useProfiles() {
     return () => window.removeEventListener('profileSettingsChanged', handleSettingsChanged);
   }, []);
 
-  const createProfile = useCallback((profileName: string, settings: ProfileSettings = { flagFunctionEnabled: false }) => {
+  const createProfile = useCallback((profileName: string, settings: ProfileSettings = DEFAULT_PROFILE_SETTINGS) => {
     if (profileName && !profiles.includes(profileName)) {
       try {
         window.localStorage.setItem(`profile_${profileName}_settings`, JSON.stringify(settings));

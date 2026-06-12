@@ -27,6 +27,7 @@ export const ProfileManagementModal: React.FC<Props> = ({ onClose }) => {
   const { showNotification } = useNotification();
   const [newProfileName, setNewProfileName] = useState('');
   const [newProfileFlagEnabled, setNewProfileFlagEnabled] = useState(false);
+  const [newProfileSingleProductResultEnabled, setNewProfileSingleProductResultEnabled] = useState(false);
   const [newProfileQuantityLimit, setNewProfileQuantityLimit] = useState<number | undefined>(undefined);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [editingProfile, setEditingProfile] = useState<string | null>(null);
@@ -43,9 +44,14 @@ export const ProfileManagementModal: React.FC<Props> = ({ onClose }) => {
 
   const handleCreate = () => {
     if (newProfileName.trim()) {
-      createProfile(newProfileName.trim(), { flagFunctionEnabled: newProfileFlagEnabled, quantityLimit: newProfileQuantityLimit });
+      createProfile(newProfileName.trim(), {
+        flagFunctionEnabled: newProfileFlagEnabled,
+        singleProductResultEnabled: newProfileSingleProductResultEnabled,
+        quantityLimit: newProfileQuantityLimit,
+      });
       setNewProfileName('');
       setNewProfileFlagEnabled(false);
+      setNewProfileSingleProductResultEnabled(false);
       setNewProfileQuantityLimit(undefined);
     }
   };
@@ -185,6 +191,19 @@ export const ProfileManagementModal: React.FC<Props> = ({ onClose }) => {
                               />
                               {t('profile.quantityLimitLabel', 'Limitar Quantidade')}
                             </label>
+                            <label className="flag-function-toggle small">
+                              <input
+                                type="checkbox"
+                                checked={activeProfileSettings.singleProductResultEnabled === true}
+                                onChange={(e) =>
+                                  updateActiveProfileSettings({
+                                    ...activeProfileSettings,
+                                    singleProductResultEnabled: e.target.checked,
+                                  })
+                                }
+                              />
+                              {t('profile.singleProductResultLabel', 'Resultado único por valor')}
+                            </label>
                             {activeProfileSettings.quantityLimit !== undefined && (
                               <div className="quantity-limit-input small">
                                 <span className="qty-limit-label">{t('profile.quantityLimitMax', 'Máx. por produto')}</span>
@@ -255,6 +274,14 @@ export const ProfileManagementModal: React.FC<Props> = ({ onClose }) => {
                 />
                 {t('profile.quantityLimitLabel', 'Limitar Quantidade')}
               </label>
+              <label className="flag-function-toggle">
+                <input
+                  type="checkbox"
+                  checked={newProfileSingleProductResultEnabled}
+                  onChange={(e) => setNewProfileSingleProductResultEnabled(e.target.checked)}
+                />
+                {t('profile.singleProductResultLabel', 'Resultado único por valor')}
+              </label>
               {newProfileQuantityLimit !== undefined && (
                 <div className="quantity-limit-input">
                   <span className="qty-limit-label">{t('profile.quantityLimitMax', 'Máx. por produto')}</span>
@@ -306,4 +333,3 @@ export const ProfileManagementModal: React.FC<Props> = ({ onClose }) => {
     </>
   );
 };
-
