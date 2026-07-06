@@ -8,7 +8,8 @@
     "blacklist": "Lista Negra",
     "clearAllData": "Limpar todos os dados",
     "cancelSearch": "Cancelar Busca",
-    "madeBy": "Feito por Ageu M. Costa"
+    "madeBy": "Feito por Ageu M. Costa",
+    "ranking": "Ranking"
   },
   "migration": {
     "prompt": "Este perfil ('{{name}}') possui dados em um formato antigo (Português). Você deseja migrar para o padrão atual (Inglês)?",
@@ -159,5 +160,19 @@
     "previous": "Anterior",
     "next": "Próxima",
     "pageInfo": "Página {{current}} de {{total}}"
+  },
+  "ranking": {
+    "title": "Ranking de Combinações",
+    "score": "Score",
+    "withdrawnCount": "Retirado",
+    "ignoredCount": "Ignorado",
+    "lastWithdrawnAt": "Última retirada",
+    "lastIgnoredAt": "Último ignore",
+    "empty": "O ranking aparecerá após usar Retirar combinação ou Recalcular.",
+    "filters": {
+      "positive": "Mais funcionais",
+      "negative": "Menos funcionais",
+      "all": "Todos"
+    }
   }
 }

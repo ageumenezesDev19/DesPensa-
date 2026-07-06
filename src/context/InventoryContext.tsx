@@ -10,6 +10,7 @@ import { useSearch, SearchMode } from "../hooks/useSearch";
 import { formatDateForDB } from "../utils/date";
 import { ImportMode } from "../components/FileUpload";
 import { useTranslation } from "react-i18next";
+import { recordWithdrawnCombination } from "../utils/combinationLearning";
 
 export interface ProductWithQuantity extends Product {
   usedQuantity: number;
@@ -21,6 +22,7 @@ interface InventoryContextType {
   withdrawn: Withdrawn[];
   blacklist: string[];
   flaggedProducts: FlaggedProduct[];
+  activeProfile: string;
   activeProfileSettings: ProfileSettings;
   loading: boolean;
   notification: string | null;
@@ -85,7 +87,7 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   const { notification, showNotification } = useNotification();
   const { products, setProducts, withdrawn, setWithdrawn, blacklist, setBlacklist, flaggedProducts, setFlaggedProducts } = useInventory();
-  const { activeProfileSettings, updateActiveProfileSettings } = useProfiles();
+  const { activeProfile, activeProfileSettings, updateActiveProfileSettings } = useProfiles();
   const { view, setView } = useViewManager("inventory");
 
   const {
@@ -120,6 +122,7 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
     searchMode,
     showNotification,
     activeProfileSettings,
+    activeProfile,
   });
 
   const handleWithdraw = (productToWithdraw: Product, quantity: number = 1) => {
@@ -196,6 +199,11 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
         withdrawnQuantity: actualWithdrawals.get(p.code)!,
         date: formattedDate,
       }));
+
+    const actuallyWithdrawnProducts = combination.filter(p => actualWithdrawals.has(p.code));
+    if (actuallyWithdrawnProducts.length > 0) {
+      recordWithdrawnCombination(activeProfile, actuallyWithdrawnProducts);
+    }
 
     setWithdrawn(prevWithdrawn => [...prevWithdrawn, ...newWithdrawnList]);
 
@@ -278,6 +286,7 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
     withdrawn,
     blacklist,
     flaggedProducts,
+    activeProfile,
     activeProfileSettings,
     loading,
     notification,

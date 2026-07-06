@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-export type View = 'inventory' | 'withdrawn' | 'blacklist';
+export type View = 'inventory' | 'withdrawn' | 'blacklist' | 'ranking';
 
 export const useViewManager = (initialView: View) => {
   const [view, setView] = useState<View>(initialView);
@@ -17,6 +17,9 @@ export const useViewManager = (initialView: View) => {
             break;
           case '3':
             setView('blacklist');
+            break;
+          case '4':
+            setView('ranking');
             break;
         }
       }

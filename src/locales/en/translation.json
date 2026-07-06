@@ -8,7 +8,8 @@
     "blacklist": "Blacklist",
     "clearAllData": "Clear all data",
     "cancelSearch": "Cancel Search",
-    "madeBy": "Made by Ageu M. Costa"
+    "madeBy": "Made by Ageu M. Costa",
+    "ranking": "Ranking"
   },
   "migration": {
     "prompt": "This profile ('{{name}}') has data in a legacy format (Portuguese). Do you want to migrate it to the current standard (English)?",
@@ -160,5 +161,19 @@
     "previous": "Previous",
     "next": "Next",
     "pageInfo": "Page {{current}} of {{total}}"
+  },
+  "ranking": {
+    "title": "Combination Ranking",
+    "score": "Score",
+    "withdrawnCount": "Withdrawn",
+    "ignoredCount": "Ignored",
+    "lastWithdrawnAt": "Last withdrawn",
+    "lastIgnoredAt": "Last ignored",
+    "empty": "The ranking will appear after using Withdraw Combination or Recalculate.",
+    "filters": {
+      "positive": "Most useful",
+      "negative": "Least useful",
+      "all": "All"
+    }
   }
 }

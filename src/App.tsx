@@ -5,6 +5,7 @@ import { ProfileManager } from "./components/ProfileManager";
 import { InventoryView } from "./views/InventoryView";
 import { WithdrawnView } from "./views/WithdrawnView";
 import { BlacklistView } from "./views/BlacklistView";
+import { RankingView } from "./views/RankingView";
 import { ClearDataModal } from "./components/ClearDataModal";
 import Loader from "./components/Loader";
 import { useInventoryContext } from "./context/InventoryContext";
@@ -104,6 +105,7 @@ const App: React.FC = () => {
           <button onClick={() => setView("inventory")} className={view === 'inventory' ? 'active' : ''}>{t('app.inventory')}</button>
           <button onClick={() => setView("withdrawn")} className={view === 'withdrawn' ? 'active' : ''}>{t('app.withdrawn')}</button>
           <button onClick={() => setView("blacklist")} className={view === 'blacklist' ? 'active' : ''}>{t('app.blacklist')}</button>
+          <button onClick={() => setView("ranking")} className={view === 'ranking' ? 'active' : ''}>{t('app.ranking', 'Ranking')}</button>
         </nav>
       </header>
       <main>
@@ -118,6 +120,9 @@ const App: React.FC = () => {
           )}
           {view === "blacklist" && (
             <BlacklistView />
+          )}
+          {view === "ranking" && (
+            <RankingView />
           )}
         </ErrorBoundary>
       </main>

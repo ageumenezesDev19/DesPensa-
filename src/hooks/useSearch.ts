@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Product, FlaggedProduct, ProfileSettings } from '../utils/inventory';
 import { findSingleProductResult, searchNearbyProduct } from '../utils/search';
+import { applyPreferenceToProducts, recordIgnoredCombination } from '../utils/combinationLearning';
 import { ProductWithQuantity } from '../context/InventoryContext';
 
 export type SearchMode = 'combination' | 'product_price' | 'product_name';
@@ -13,9 +14,10 @@ interface SearchProps {
   searchMode: SearchMode;
   showNotification: (message: string) => void;
   activeProfileSettings: ProfileSettings;
+  activeProfile: string;
 }
 
-export const useSearch = ({ products, blacklist, flaggedProducts, price, searchMode, showNotification, activeProfileSettings }: SearchProps) => {
+export const useSearch = ({ products, blacklist, flaggedProducts, price, searchMode, showNotification, activeProfileSettings, activeProfile }: SearchProps) => {
   const [searchResult, setSearchResult] = useState<{ status: string; products?: Product[]; combination?: ProductWithQuantity[] } | null>(null);
   const [searching, setSearching] = useState(false);
   const [searchCancelled, setSearchCancelled] = useState(false);
@@ -45,6 +47,7 @@ export const useSearch = ({ products, blacklist, flaggedProducts, price, searchM
     const newPreviouslyFound = new Set(previouslyFound);
 
     if (searchResult.combination) {
+      recordIgnoredCombination(activeProfile, searchResult.combination);
       searchResult.combination.forEach((p: Product) => newPreviouslyFound.add(p.code));
     } else if (searchResult.products) {
       searchResult.products.forEach((p: Product) => newPreviouslyFound.add(p.code));
@@ -109,7 +112,7 @@ export const useSearch = ({ products, blacklist, flaggedProducts, price, searchM
       }
 
       if (activeProfileSettings.singleProductResultEnabled) {
-        const singleProductResult = findSingleProductResult(products, desiredPrice, {
+        const singleProductResult = findSingleProductResult(applyPreferenceToProducts(activeProfile, products), desiredPrice, {
           blacklist,
           flaggedCodes,
           previouslyFound: currentPreviouslyFound,
@@ -137,7 +140,13 @@ export const useSearch = ({ products, blacklist, flaggedProducts, price, searchM
       const afterFlagged = afterStock.filter(p => !flaggedCodes.has(p.code));
       const afterBlacklist = afterFlagged.filter(p => !blacklist.some(term => p.description.toLowerCase().includes(term.toLowerCase()) || p.code.toLowerCase().includes(term.toLowerCase())));
       const afterPrice = afterBlacklist.filter(p => (p.salePrice ?? 0) > 0);
-      const candidates = afterPrice.sort((a, b) => (b.salePrice ?? 0) - (a.salePrice ?? 0));
+      const candidates = applyPreferenceToProducts(activeProfile, afterPrice).sort((a, b) => {
+        const priceDiff = (b.salePrice ?? 0) - (a.salePrice ?? 0);
+        if (priceDiff !== 0) return priceDiff;
+        const preferenceDiff = b.preferenceScore - a.preferenceScore;
+        if (preferenceDiff !== 0) return preferenceDiff;
+        return a.code.localeCompare(b.code);
+      });
 
       console.log(`[useSearch] Filter breakdown: total=${allProducts.length}, afterPrevFound=${afterPreviouslyFound.length}, afterStock=${afterStock.length}, afterFlagged=${afterFlagged.length}, afterBlacklist=${afterBlacklist.length}, afterPrice=${afterPrice.length}, final=${candidates.length}`);
 

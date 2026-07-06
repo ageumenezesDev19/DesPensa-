@@ -6,6 +6,7 @@ interface Product {
   price: number;
   type: 'UND' | 'KG' | 'SC';
   inventory: number;
+  preferenceScore: number;
 }
 
 interface Combination {
@@ -13,6 +14,7 @@ interface Combination {
   total: number;
   quantity: { [key: string]: number };
   diff: number;
+  preferenceScore: number;
 }
 
 // Helper to calculate total in cents to avoid floating point issues
@@ -83,16 +85,21 @@ const findCombinationHeuristic = (
 
     const totalCents = calculateTotalInCents(currentCombo, currentQuantity, productsInCents);
     const diff = Math.abs(totalCents - targetCents);
+    const preferenceScore = currentCombo.reduce((acc, product) => acc + product.preferenceScore, 0);
 
     const isBetter = diff < minDiff ||
-      (diff === minDiff && currentCombo.length < (bestCombination?.products.length ?? Infinity));
+      (diff === minDiff && currentCombo.length < (bestCombination?.products.length ?? Infinity)) ||
+      (diff === minDiff &&
+        currentCombo.length === (bestCombination?.products.length ?? Infinity) &&
+        preferenceScore > (bestCombination?.preferenceScore ?? -Infinity));
     if (isBetter) {
        minDiff = diff;
        bestCombination = {
           products: currentCombo,
           total: totalCents / 100,
           quantity: currentQuantity,
-          diff
+          diff,
+          preferenceScore
        };
     }
   };
@@ -150,6 +157,7 @@ self.onmessage = (e: MessageEvent) => {
         price: isNaN(priceNum) ? 0 : priceNum,
         type: type,
         inventory: isNaN(inventoryNum) ? 0 : inventoryNum,
+        preferenceScore: Number(p.preferenceScore) || 0,
       };
     });
 

@@ -8,6 +8,7 @@ export interface SingleProductResult extends Product {
   usedQuantity: number;
   total: number;
   differenceCents: number;
+  preferenceScore?: number;
 }
 
 interface SingleProductSearchOptions {
@@ -106,6 +107,7 @@ export function findSingleProductResult(
         usedQuantity,
         total: totalCents / 100,
         differenceCents: Math.abs(totalCents - targetCents),
+        preferenceScore: Number((product as Product & { preferenceScore?: number }).preferenceScore) || 0,
       };
 
       const isBetter = !best ||
@@ -113,6 +115,10 @@ export function findSingleProductResult(
         (candidate.differenceCents === best.differenceCents && candidate.usedQuantity < best.usedQuantity) ||
         (candidate.differenceCents === best.differenceCents &&
           candidate.usedQuantity === best.usedQuantity &&
+          (candidate.preferenceScore ?? 0) > (best.preferenceScore ?? 0)) ||
+        (candidate.differenceCents === best.differenceCents &&
+          candidate.usedQuantity === best.usedQuantity &&
+          (candidate.preferenceScore ?? 0) === (best.preferenceScore ?? 0) &&
           candidate.code.localeCompare(best.code) < 0);
 
       if (isBetter) best = candidate;
