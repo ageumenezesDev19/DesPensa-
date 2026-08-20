@@ -41,8 +41,8 @@
     "cancelled": "Search cancelled."
   },
   "inventory": {
-    "importHtml": "Import products.html",
-    "importPrompt": "Please import the `products.html` file to start.",
+    "importHtml": "Import products (.html/.xls)",
+    "importPrompt": "Please import `products.html` or `products.xls` to start.",
     "emptyState": "No products in stock.",
     "stockTitle": "Products in Stock",
     "table": {

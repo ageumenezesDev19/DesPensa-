@@ -6,6 +6,7 @@ import "../styles/SearchBar.scss";
 import { ProductWithQuantity } from "../context/InventoryContext";
 import { SearchMode } from "../hooks/useSearch";
 import { useInventoryContext } from "../context/InventoryContext";
+import { buildProductCopyText } from "../utils/productCopy";
 
 const SearchBar: React.FC = () => {
   const { t } = useTranslation();
@@ -53,20 +54,7 @@ const SearchBar: React.FC = () => {
   }, [focusInput, setFocusInput]);
 
   const handleCopy = async (product: any, index: number) => {
-    const qty = product.usedQuantity;
-    const isFractional = qty !== undefined && qty % 1 !== 0;
-    const includeQuantity = qty !== undefined && (isFractional || qty > 1);
-    let quantityStr = '';
-    if (includeQuantity) {
-      if (isFractional) {
-        quantityStr = qty.toFixed(3).replace('.', ',');
-      } else {
-        quantityStr = qty.toString();
-      }
-    }
-    // Normalizar U+00A0 (non-breaking space do HTML &nbsp;) para espaço normal — compatibilidade com GDOOR
-    const rawText = includeQuantity ? `${quantityStr}*${product.description}` : product.description;
-    const textToCopy = rawText.replace(/\u00A0/g, ' ');
+    const textToCopy = buildProductCopyText(product);
     try {
       await navigator.clipboard.writeText(textToCopy);
       setCopiedIndex(index);
@@ -184,7 +172,7 @@ const SearchBar: React.FC = () => {
         </div>
       )}
 
-      {products.length === 0 && <p>{t('inventory.importPrompt', 'Por favor, importe o arquivo `products.html` para começar.')}</p>}
+      {products.length === 0 && <p>{t('inventory.importPrompt', 'Por favor, importe o arquivo `produtos.html` ou `produtos.xls` para começar.')}</p>}
 
       {!searching && result && result.status === "ok" && (searchMode === 'product_price' || searchMode === 'product_name') && result.products && result.products.length > 0 && (
         <div className="search-result-card animated-slideUp">

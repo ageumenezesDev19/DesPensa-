@@ -1,5 +1,5 @@
 import {
-  loadHtmlDataFromString,
+  loadProductDataFromString,
   loadWithdrawnFromString
 } from '../utils/db_utils';
 
@@ -28,10 +28,10 @@ export const useFileHandlers = ({
   t,
 }: FileHandlerProps) => {
 
-  const handleLoadProducts = (htmlContent: string, mode: ImportMode, ignoreNcm: boolean = false, filterByCsosn: boolean = false) => {
+  const handleLoadProducts = (productFileContent: string, mode: ImportMode, ignoreNcm: boolean = false, filterByCsosn: boolean = false) => {
     setLoading(true);
     try {
-      const { df: processedData } = loadHtmlDataFromString(htmlContent, { ignoreNcm, filterByCsosn });
+      const { df: processedData } = loadProductDataFromString(productFileContent, { ignoreNcm, filterByCsosn });
 
       console.log(`[handleLoadProducts] Loaded ${processedData.length} products`);
       console.log(`[handleLoadProducts] First product:`, processedData[0]);

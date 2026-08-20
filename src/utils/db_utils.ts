@@ -1,9 +1,32 @@
 import * as cheerio from 'cheerio';
 // import dayjs from 'dayjs';
 
-// export function loadHtmlDataFromString(html: string): { df: any[] } {
-export function loadHtmlDataFromString(html: string, options?: { ignoreNcm?: boolean; filterByCsosn?: boolean }): { df: any[] } {
-  console.log(`[loadHtmlDataFromString] Initial HTML size: ${html.length} chars`);
+export interface ProductImportOptions {
+  ignoreNcm?: boolean;
+  filterByCsosn?: boolean;
+}
+
+function isUnsupportedBinarySpreadsheet(content: string): boolean {
+  const prefix = content.slice(0, 8);
+  return (
+    content.startsWith('PK\x03\x04') ||
+    content.startsWith('\u00d0\u00cf\u0011\u00e0') ||
+    prefix.startsWith('\uFFFD\uFFFD\u0011\uFFFD') ||
+    prefix.includes('\u0000')
+  );
+}
+
+function normalizeProductFileContent(content: string): string {
+  return content.replace(/^\uFEFF/, '');
+}
+
+export function loadProductDataFromString(content: string, options?: ProductImportOptions): { df: any[] } {
+  if (isUnsupportedBinarySpreadsheet(content)) {
+    throw new Error('Unsupported product file format. Use produtos.html or the .xls export that contains an HTML table.');
+  }
+
+  const html = normalizeProductFileContent(content);
+  console.log(`[loadProductDataFromString] Initial file size: ${html.length} chars`);
   
   const normalizeColName = (col: string): string => {
     // Replace non-breaking spaces and other special whitespace characters with normal space
@@ -156,6 +179,7 @@ export function loadHtmlDataFromString(html: string, options?: { ignoreNcm?: boo
           salePrice: rawObj['Preço Venda'] || '0',
           st: rawObj['ST'] || rawObj['CSOSN'] || '',  // Support both formats
           elo: rawObj['ELO'] || '',
+          ncm: rawObj['Cód.NCM'] || '',
         };
       }).filter(item => item !== null && item.code && item.description);
       
@@ -168,6 +192,10 @@ export function loadHtmlDataFromString(html: string, options?: { ignoreNcm?: boo
   }
 
   return { df };
+}
+
+export function loadHtmlDataFromString(html: string, options?: ProductImportOptions): { df: any[] } {
+  return loadProductDataFromString(html, options);
 }
 
 export function processData(df: any[], ignoreNcm: boolean = false, filterByCsosn: boolean = false): any[] {
